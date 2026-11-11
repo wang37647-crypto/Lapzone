@@ -1,0 +1,2635 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lapzone Pro | 旗艦筆電商城與後台經營策略分析系統</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            200: '#c7d2fe',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#312e81',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js CDN for Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts Inter & Noto Sans TC -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c7d2fe;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #818cf8;
+        }
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #printable-receipt, #printable-receipt * {
+                visibility: visible;
+            }
+            #printable-receipt {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased selection:bg-brand-500 selection:text-white flex flex-col min-h-screen">
+
+    <!-- Toast Notification Popup -->
+    <div id="toast" class="fixed top-24 right-5 z-50 transform translate-x-full transition-transform duration-300 bg-slate-900 text-white px-6 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 border border-slate-700">
+        <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400 text-xl"></i>
+        <div>
+            <p id="toast-title" class="font-bold text-sm">提示</p>
+            <p id="toast-msg" class="text-xs text-slate-300">操作已順利完成</p>
+        </div>
+    </div>
+
+    <!-- Top Announcement Bar -->
+    <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-slate-300 text-xs py-2 px-4 text-center font-medium tracking-wide flex items-center justify-center gap-2 flex-wrap border-b border-slate-800">
+        <span>🎉 全館經營策略全面升級！A 類爆款速出、B 類升級配備享 95 折、C 類下單即贈精選周邊組合！</span>
+        <button onclick="openGuideModal()" class="underline font-bold text-amber-300 hover:text-amber-200 ml-1 flex items-center gap-1">
+            <i class="fa-solid fa-book-open"></i> 查看筆電經營策略指南
+        </button>
+    </div>
+
+    <!-- Header Navbar -->
+    <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 transition-all">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <!-- Logo -->
+            <div class="flex items-center gap-3 cursor-pointer" onclick="switchView('store')">
+                <div class="w-11 h-11 bg-gradient-to-tr from-indigo-600 via-brand-600 to-cyan-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-brand-500/40 relative group transition-transform hover:scale-105">
+                    <div class="absolute inset-0 bg-brand-500/30 rounded-2xl blur-sm group-hover:blur-md transition-all"></div>
+                    <i class="fa-solid fa-microchip text-xl relative z-10 transform -rotate-6 group-hover:rotate-0 transition-transform"></i>
+                </div>
+                <div>
+                    <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-brand-600 to-indigo-500 bg-clip-text text-transparent">Lapzone</span>
+                    <span class="block text-[10px] uppercase font-bold text-slate-400 tracking-widest">Pro Laptop Store & Strategy Analytics</span>
+                </div>
+            </div>
+
+            <!-- Desktop Nav Links -->
+            <nav class="hidden md:flex items-center gap-6 font-semibold text-sm text-slate-600">
+                <button onclick="switchView('store')" id="nav-store-btn" class="text-brand-600 font-bold transition-colors">線上商城</button>
+                <button onclick="openQuizModal()" class="hover:text-brand-600 transition-colors flex items-center gap-1.5 text-indigo-600 font-bold">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> 智慧選機助手
+                </button>
+                <button onclick="openOrderLookupModal()" class="hover:text-brand-600 transition-colors flex items-center gap-1">
+                    <i class="fa-solid fa-magnifying-glass-location"></i> 訂單查詢
+                </button>
+                <button onclick="requestAdminAccess()" id="nav-admin-btn" class="hover:text-brand-600 transition-colors flex items-center gap-1">
+                    <i class="fa-solid fa-lock text-amber-500" id="nav-admin-lock-icon"></i> <span id="nav-admin-text">後台分析儀表板</span>
+                </button>
+                <button onclick="openComparisonModal()" class="hover:text-brand-600 transition-colors flex items-center gap-1.5 relative">
+                    <i class="fa-solid fa-scale-balanced"></i> 規格比較
+                    <span id="compare-badge" class="bg-brand-600 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center hidden">0</span>
+                </button>
+            </nav>
+
+            <!-- Right Actions -->
+            <div class="flex items-center gap-3">
+                <!-- Global Search -->
+                <div class="relative hidden sm:block" id="search-container-wrap">
+                    <input type="text" id="global-search" placeholder="搜尋筆電型號、NPU、CPU..." oninput="handleSearch(this.value)" class="bg-slate-100 hover:bg-slate-200/70 focus:bg-white text-xs rounded-full pl-9 pr-4 py-2 w-44 lg:w-56 border border-transparent focus:border-brand-500 focus:outline-none transition-all">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-2.5 text-slate-400 text-xs"></i>
+                </div>
+                <!-- Wishlist -->
+                <button onclick="toggleWishlistDrawer()" class="relative p-2.5 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-700 transition-all flex items-center justify-center" title="查看收藏清單">
+                    <i class="fa-solid fa-heart text-lg"></i>
+                    <span id="wishlist-count" class="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center hidden">0</span>
+                </button>
+                <!-- Cart -->
+                <button onclick="toggleCartDrawer()" class="relative p-2.5 rounded-xl bg-slate-100 hover:bg-brand-50 hover:text-brand-600 text-slate-700 transition-all flex items-center justify-center" title="查看購物車">
+                    <i class="fa-solid fa-cart-shopping text-lg"></i>
+                    <span id="cart-count" class="absolute -top-1 -right-1 bg-brand-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center hidden">0</span>
+                </button>
+                <!-- User Profile -->
+                <button onclick="openProfileModal()" class="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all flex items-center justify-center" title="會員中心與偏好">
+                    <i class="fa-solid fa-user-circle text-lg"></i>
+                </button>
+                <!-- Mobile Menu Button -->
+                <button onclick="toggleMobileMenu()" class="md:hidden p-2.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200">
+                    <i class="fa-solid fa-bars text-lg"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile Menu Drawer -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white border-b border-slate-200 px-6 py-4 space-y-3">
+            <input type="text" placeholder="搜尋筆電型號、NPU、CPU..." oninput="handleSearch(this.value)" class="w-full bg-slate-100 text-xs rounded-xl px-4 py-2.5 border border-slate-200 mb-2">
+            <button onclick="switchView('store'); toggleMobileMenu();" class="block w-full text-left font-bold text-slate-700 hover:text-brand-600 py-1">線上商城</button>
+            <button onclick="openQuizModal(); toggleMobileMenu();" class="block w-full text-left font-bold text-indigo-600 hover:text-brand-600 py-1"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i> 智慧選機助手</button>
+            <button onclick="openOrderLookupModal(); toggleMobileMenu();" class="block w-full text-left font-bold text-slate-700 hover:text-brand-600 py-1"><i class="fa-solid fa-magnifying-glass-location mr-1"></i> 訂單查詢</button>
+            <button onclick="requestAdminAccess(); toggleMobileMenu();" class="block w-full text-left font-bold text-slate-700 hover:text-brand-600 py-1"><i class="fa-solid fa-lock text-amber-500 mr-1"></i> 後台分析儀表板</button>
+            <button onclick="openComparisonModal(); toggleMobileMenu();" class="block w-full text-left font-bold text-slate-700 hover:text-brand-600 py-1"><i class="fa-solid fa-scale-balanced mr-1"></i> 規格比較工具</button>
+        </div>
+    </header>
+
+    <!-- Main View Container -->
+    <main class="flex-grow">
+        <!-- ==================== 1. STORE VIEW ==================== -->
+        <div id="store-view" class="block">
+            <!-- Hero Banner -->
+            <section class="relative overflow-hidden bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white py-16 md:py-20">
+                <div class="absolute inset-0 opacity-20 bg-[radial-gradient(#6366f1_1px,transparent_1px)] [background-size:16px_16px]"></div>
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+                    <div class="space-y-6">
+                        <div class="inline-flex items-center gap-2 bg-brand-500/20 border border-brand-500/40 text-brand-300 px-3.5 py-1.5 rounded-full text-xs font-semibold tracking-wide">
+                            <i class="fa-solid fa-brain text-amber-400"></i> 全新 Copilot+ AIPC 與三大經營策略專區
+                        </div>
+                        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight">
+                            AI 算力時代，<br>定義您的<span class="bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">智慧未來</span>。
+                        </h1>
+                        <p class="text-slate-300 text-sm sm:text-base max-w-xl font-light leading-relaxed">
+                            全新上架最新 AIPC 筆電與輕薄長效、頂級電競、專業創作者陣容。A 類衝刺規模現貨供應、B 類最大化毛利升級享 95 折、C 類加速變現即贈豪華鍵鼠組！
+                        </p>
+                        <div class="flex flex-wrap gap-3 pt-2">
+                            <a href="#products" class="bg-gradient-to-r from-brand-600 to-indigo-500 hover:from-brand-500 hover:to-indigo-400 text-white font-semibold px-6 py-3.5 rounded-2xl shadow-lg shadow-brand-500/30 transition-all flex items-center gap-2 text-sm">
+                                立即選購筆電 <i class="fa-solid fa-arrow-down-long"></i>
+                            </a>
+                            <button onclick="openQuizModal()" class="bg-indigo-600/90 hover:bg-indigo-500 text-white font-semibold px-5 py-3.5 rounded-2xl shadow-md transition-all flex items-center gap-2 text-sm">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> 智慧選機助手
+                            </button>
+                        </div>
+                    </div>
+                    <div class="relative flex justify-center">
+                        <div class="absolute w-72 h-72 md:w-96 md:h-96 bg-brand-500/20 rounded-full blur-3xl -top-10 -right-10"></div>
+                        <div class="relative bg-slate-800/80 border border-slate-700/80 p-6 rounded-3xl shadow-2xl backdrop-blur-md max-w-md w-full">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-xs font-bold text-brand-400 uppercase tracking-wider">A 類衝刺規模 (現貨供應)</span>
+                                <span class="bg-amber-500/20 text-amber-300 text-xs px-2.5 py-1 rounded-md font-semibold">🔥 24hr 快速出貨</span>
+                            </div>
+                            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRkmQsmiBkhxSgvVkJldj1Wf0ejaavMnKN8bCFaBSs2B7xCJ8NjPG18-E4&s=10" alt="Featured Laptop" class="rounded-2xl object-cover h-48 w-full mb-4 shadow-md border border-slate-700">
+                            <h3 class="text-lg font-bold text-white mb-1">MacBook Air 15 M3</h3>
+                            <p class="text-slate-400 text-xs mb-4">Apple M3 / 16GB RAM / 512GB SSD / 18hr 續航</p>
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <span class="text-xs text-slate-500 line-through">NT$ 46,900</span>
+                                    <div class="text-xl font-extrabold text-emerald-400">NT$ 42,900</div>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button onclick="openConfiguratorModal(1)" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-xl text-xs font-semibold transition-all">
+                                        <i class="fa-solid fa-sliders"></i> 客製選配
+                                    </button>
+                                    <button onclick="addToCart(1)" class="bg-brand-600 hover:bg-brand-500 text-white px-3.5 py-2 rounded-xl text-xs font-semibold transition-all shadow-md">
+                                        購買
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Laptop Catalog Section -->
+            <section id="products" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+                <div class="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
+                    <div>
+                        <span class="text-brand-600 font-bold text-xs tracking-widest uppercase">Catalog & Strategy Collection</span>
+                        <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight mt-1">探索全系列筆電與經營優惠</h2>
+                        <div id="ai-active-badge" class="hidden mt-2 inline-flex items-center gap-2 bg-indigo-50 border border-indigo-200 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold">
+                            <i class="fa-solid fa-wand-magic-sparkles text-indigo-600"></i> AI 交叉嚴格篩選結果生效中
+                            <button onclick="resetAISearch()" class="hover:text-rose-600 ml-1"><i class="fa-solid fa-xmark"></i> 清除 AI 篩選</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Category Filters -->
+                    <div class="flex flex-wrap gap-2 bg-slate-200/70 p-1.5 rounded-2xl">
+                        <button onclick="filterCategory('all')" id="cat-all" class="category-btn px-4 py-2 rounded-xl text-xs font-bold transition-all bg-white text-slate-900 shadow-sm">全部筆電</button>
+                        <button onclick="filterCategory('aipc')" id="cat-aipc" class="category-btn px-4 py-2 rounded-xl text-xs font-bold transition-all text-slate-600 hover:text-slate-900"><i class="fa-solid fa-brain text-brand-600 mr-1"></i> AIPC 新旗艦</button>
+                        <button onclick="filterCategory('ultrabook')" id="cat-ultrabook" class="category-btn px-4 py-2 rounded-xl text-xs font-bold transition-all text-slate-600 hover:text-slate-900">輕薄文書</button>
+                        <button onclick="filterCategory('gaming')" id="cat-gaming" class="category-btn px-4 py-2 rounded-xl text-xs font-bold transition-all text-slate-600 hover:text-slate-900">電競遊戲</button>
+                        <button onclick="filterCategory('creator')" id="cat-creator" class="category-btn px-4 py-2 rounded-xl text-xs font-bold transition-all text-slate-600 hover:text-slate-900">創作者繪圖</button>
+                        <button onclick="filterCategory('business')" id="cat-business" class="category-btn px-4 py-2 rounded-xl text-xs font-bold transition-all text-slate-600 hover:text-slate-900">商務辦公</button>
+                    </div>
+                </div>
+
+                <!-- Controls Bar -->
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 mb-8 flex flex-wrap items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <span class="text-xs font-semibold text-slate-700"><i class="fa-solid fa-filter text-brand-600"></i> 排序方式：</span>
+                        <select id="sort-select" onchange="sortProducts()" class="bg-slate-50 border border-slate-300 text-slate-700 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-brand-500 font-semibold">
+                            <option value="default">預設推薦</option>
+                            <option value="price-low">價格：由低到高</option>
+                            <option value="price-high">價格：由高到低</option>
+                            <option value="rating">評價最高</option>
+                        </select>
+                    </div>
+                    <div class="text-xs text-slate-500">
+                        共顯示 <span id="product-count" class="font-bold text-slate-800">0</span> 款專業筆電
+                    </div>
+                </div>
+
+                <!-- Product Grid -->
+                <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    <!-- Dynamic rendering -->
+                </div>
+
+                <!-- No Results State -->
+                <div id="no-products" class="hidden text-center py-20 bg-white rounded-3xl border border-slate-200 shadow-sm p-8">
+                    <div class="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mx-auto text-indigo-500 text-3xl mb-4">
+                        <i class="fa-solid fa-filter-circle-xmark"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-800">找不到同時符合所有條件的筆電</h3>
+                    <p class="text-slate-500 text-xs mt-1 max-w-md mx-auto">當前選擇的條件交集無對應筆電。請點擊下方按鈕重設條件。</p>
+                    <button onclick="resetAISearch()" class="mt-4 bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-md transition-all">
+                        重設篩選條件
+                    </button>
+                </div>
+            </section>
+        </div>
+
+        <!-- ==================== 2. ADMIN ANALYTICS VIEW ==================== -->
+        <div id="admin-view" class="hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-brand-600 uppercase tracking-widest">Admin Strategy Analytics</span>
+                        <span class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1">
+                            <i class="fa-solid fa-user-shield"></i> 管理員授權中
+                        </span>
+                    </div>
+                    <h2 class="text-2xl font-extrabold text-slate-900 mt-0.5">經營策略、庫存監控與行銷效益儀表板</h2>
+                    <p class="text-slate-500 text-xs mt-0.5">實時監控 A/B/C 三類經營策略執行狀況，精準掌握財務指標與營運轉化效益。</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-3">
+                    <span class="text-xs font-semibold text-slate-600">時間區間：</span>
+                    <select id="analytics-timeframe" onchange="updateAnalyticsData()" class="bg-slate-50 border border-slate-300 text-slate-700 text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-brand-500 font-semibold">
+                        <option value="month">本月 (This Month)</option>
+                        <option value="quarter">上一季 (Last Quarter)</option>
+                        <option value="ytd">今年累計 (Year-to-Date)</option>
+                    </select>
+                    <button onclick="exportReportCSV()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-md transition-all flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-csv"></i> 匯出銷售報表 CSV
+                    </button>
+                    <button onclick="adminLogout()" class="bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-700 text-xs font-semibold px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5">
+                        <i class="fa-solid fa-right-from-bracket"></i> 登出後台
+                    </button>
+                </div>
+            </div>
+
+            <!-- KPI Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">總營業額 (Total Revenue)</p>
+                        <h3 id="kpi-revenue" class="text-2xl font-extrabold text-slate-900">NT$ 3,428,500</h3>
+                        <span id="kpi-revenue-trend" class="inline-flex items-center gap-1 text-[11px] text-emerald-600 font-bold mt-2 bg-emerald-50 px-2 py-0.5 rounded-full">
+                            <i class="fa-solid fa-arrow-trend-up"></i> +18.4% 較前期
+                        </span>
+                    </div>
+                    <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center text-xl font-bold">
+                        <i class="fa-solid fa-sack-dollar"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">淨利潤金額 (Net Profit)</p>
+                        <h3 id="kpi-profit" class="text-2xl font-extrabold text-emerald-600">NT$ 960,180</h3>
+                        <span id="kpi-profit-margin" class="inline-flex items-center gap-1 text-[11px] text-brand-600 font-bold mt-2 bg-brand-50 px-2 py-0.5 rounded-full">
+                            平均毛利率 28.0%
+                        </span>
+                    </div>
+                    <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center text-xl font-bold">
+                        <i class="fa-solid fa-chart-line"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">總訂單與客單價</p>
+                        <h3 id="kpi-orders" class="text-xl font-extrabold text-slate-900">198 筆 <span class="text-xs font-normal text-slate-400">/ NT$ <span id="kpi-aov">17,315</span></span></h3>
+                        <span id="kpi-orders-trend" class="inline-flex items-center gap-1 text-[11px] text-emerald-600 font-bold mt-2 bg-emerald-50 px-2 py-0.5 rounded-full">
+                            <i class="fa-solid fa-arrow-trend-up"></i> +12.5% 較前期
+                        </span>
+                    </div>
+                    <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center text-xl font-bold">
+                        <i class="fa-solid fa-receipt"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">熱銷冠軍筆電</p>
+                        <h3 id="kpi-bestseller" class="text-sm font-extrabold text-slate-900 line-clamp-1 mt-1">MacBook Air 15 M3</h3>
+                        <span id="kpi-bestseller-sales" class="inline-flex items-center gap-1 text-[11px] text-brand-600 font-bold mt-2 bg-brand-50 px-2 py-0.5 rounded-full">
+                            已售出 142 台
+                        </span>
+                    </div>
+                    <div class="w-12 h-12 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center text-xl font-bold">
+                        <i class="fa-solid fa-trophy"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ABC INVENTORY MATRIX (PARETO ANALYSIS) -->
+            <div class="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6" id="abc-matrix-section">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <span class="text-xs font-bold text-brand-600 uppercase tracking-widest">ABC INVENTORY MATRIX (PARETO ANALYSIS)</span>
+                        <h3 class="text-xl font-extrabold text-slate-900 mt-0.5">ABC 庫存分析矩陣</h3>
+                        <p class="text-slate-500 text-xs mt-0.5">依據帕雷托法則 (80/20 法則) 將全館 25 款筆電品項劃分為 A類、B類、C類，進行差異化庫存與銷售分析。</p>
+                    </div>
+                    <div class="flex items-center gap-2 self-start md:self-auto">
+                        <button onclick="toggleAbcMatrixEdit()" id="abc-edit-btn" class="bg-slate-100 hover:bg-brand-50 hover:text-brand-600 text-slate-700 text-xs font-bold px-4 py-2.5 rounded-xl border border-slate-200 transition-all flex items-center gap-1.5">
+                            <i class="fa-solid fa-pen-to-square"></i> 編輯數據
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Display Mode -->
+                <div id="abc-matrix-display" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- A Class -->
+                    <div class="bg-amber-50/60 border border-amber-200 p-6 rounded-3xl space-y-3 shadow-sm">
+                        <span class="inline-block bg-amber-500 text-white font-extrabold text-xs px-3.5 py-1.5 rounded-xl shadow-sm" id="abc-a-badge">A 類品項 (主力銷售)</span>
+                        <div class="space-y-1.5 pt-1">
+                            <p class="text-xs font-bold text-amber-900" id="abc-a-item-ratio">品項數比例：約 10% ～ 20% (16%)</p>
+                            <p class="text-xs font-bold text-amber-900" id="abc-a-sales-ratio">總產值／銷售額比例：約 70% ～ 80% (72.1%)</p>
+                        </div>
+                        <p class="text-xs text-slate-600 leading-relaxed pt-1" id="abc-a-desc">核心熱銷輕薄筆電（MacBook Air 15, Zenbook 14, Dell XPS 13, Spectre 14 共 4 款）。嚴控缺貨，優先保障安全庫存。</p>
+                    </div>
+
+                    <!-- B Class -->
+                    <div class="bg-indigo-50/60 border border-indigo-200 p-6 rounded-3xl space-y-3 shadow-sm">
+                        <span class="inline-block bg-indigo-600 text-white font-extrabold text-xs px-3.5 py-1.5 rounded-xl shadow-sm" id="abc-b-badge">B 類品項 (次要主力)</span>
+                        <div class="space-y-1.5 pt-1">
+                            <p class="text-xs font-bold text-indigo-900" id="abc-b-item-ratio">品項數比例：約 20% ～ 30% (24%)</p>
+                            <p class="text-xs font-bold text-indigo-900" id="abc-b-sales-ratio">總產值／銷售額比例：約 15% ～ 25% (21.5%)</p>
+                        </div>
+                        <p class="text-xs text-slate-600 leading-relaxed pt-1" id="abc-b-desc">高單價次要主力（Zephyrus 16, Legion Pro 7i 等共 6 款）。採彈性庫存管理，維持常態供應。</p>
+                    </div>
+
+                    <!-- C Class -->
+                    <div class="bg-slate-50 border border-slate-200 p-6 rounded-3xl space-y-3 shadow-sm">
+                        <span class="inline-block bg-slate-800 text-white font-extrabold text-xs px-3.5 py-1.5 rounded-xl shadow-sm" id="abc-c-badge">C 類品項 (長尾延伸)</span>
+                        <div class="space-y-1.5 pt-1">
+                            <p class="text-xs font-bold text-slate-800" id="abc-c-item-ratio">品項數比例：約 50% ～ 70% (60%)</p>
+                            <p class="text-xs font-bold text-slate-800" id="abc-c-sales-ratio">總產值／銷售額比例：約 5% ～ 10% (6.4%)</p>
+                        </div>
+                        <p class="text-xs text-slate-600 leading-relaxed pt-1" id="abc-c-desc">長尾與小眾專區（Copilot+ AIPC 5款, 商務 5款, 頂規電競等共 15 款）。維持低庫存或接單生產模式。</p>
+                    </div>
+                </div>
+
+                <!-- Edit Mode -->
+                <div id="abc-matrix-edit" class="hidden grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Edit A -->
+                    <div class="bg-amber-50/60 border border-amber-300 p-5 rounded-3xl space-y-3">
+                        <span class="inline-block bg-amber-500 text-white font-extrabold text-xs px-3 py-1 rounded-xl">編輯 A 類品項</span>
+                        <div>
+                            <label class="block text-[11px] font-bold text-amber-900 mb-1">品項數比例</label>
+                            <input type="text" id="input-abc-a-item" class="w-full bg-white border border-amber-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:border-amber-500">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-amber-900 mb-1">總產值／銷售額比例</label>
+                            <input type="text" id="input-abc-a-sales" class="w-full bg-white border border-amber-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:border-amber-500">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-amber-900 mb-1">說明文字</label>
+                            <textarea id="input-abc-a-desc" rows="3" class="w-full bg-white border border-amber-300 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-amber-500"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Edit B -->
+                    <div class="bg-indigo-50/60 border border-indigo-300 p-5 rounded-3xl space-y-3">
+                        <span class="inline-block bg-indigo-600 text-white font-extrabold text-xs px-3 py-1 rounded-xl">編輯 B 類品項</span>
+                        <div>
+                            <label class="block text-[11px] font-bold text-indigo-900 mb-1">品項數比例</label>
+                            <input type="text" id="input-abc-b-item" class="w-full bg-white border border-indigo-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-indigo-900 mb-1">總產值／銷售額比例</label>
+                            <input type="text" id="input-abc-b-sales" class="w-full bg-white border border-indigo-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-indigo-900 mb-1">說明文字</label>
+                            <textarea id="input-abc-b-desc" rows="3" class="w-full bg-white border border-indigo-300 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-indigo-500"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Edit C -->
+                    <div class="bg-slate-100 border border-slate-300 p-5 rounded-3xl space-y-3">
+                        <span class="inline-block bg-slate-800 text-white font-extrabold text-xs px-3 py-1 rounded-xl">編輯 C 類品項</span>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-800 mb-1">品項數比例</label>
+                            <input type="text" id="input-abc-c-item" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:border-slate-500">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-800 mb-1">總產值／銷售額比例</label>
+                            <input type="text" id="input-abc-c-sales" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:border-slate-500">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-800 mb-1">說明文字</label>
+                            <textarea id="input-abc-c-desc" rows="3" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-slate-500"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- REVISED SECTION: A/B/C 類經營策略與行銷效益面板 -->
+            <div class="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <span class="text-xs font-bold text-brand-600 uppercase tracking-widest">Business Strategy & Marketing Benefits</span>
+                        <h3 class="text-xl font-extrabold text-slate-900 mt-0.5">A / B / C 類經營策略與行銷效益評估</h3>
+                        <p class="text-slate-500 text-xs mt-0.5">針對各大類別實施精準經營與行銷手段，全面優化營收大盤、毛利結構與庫存健康度。</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- A Category Strategy Card -->
+                    <div class="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 p-6 rounded-3xl space-y-4 shadow-sm relative overflow-hidden">
+                        <div class="flex items-center justify-between">
+                            <span class="bg-amber-500 text-white font-extrabold text-xs px-3 py-1 rounded-xl shadow-sm">A 類經營策略</span>
+                            <span class="text-xs font-bold text-amber-800"><i class="fa-solid fa-bolt mr-1"></i>營收規模與現金流極大化</span>
+                        </div>
+                        <div class="space-y-2">
+                            <h4 class="font-bold text-slate-900 text-sm">A 類策略：衝刺營收規模、維持現金流、確保不斷貨</h4>
+                        </div>
+                        <div class="bg-white/90 backdrop-blur-sm p-4 rounded-2xl border border-amber-200 space-y-2">
+                            <span class="text-xs font-extrabold text-amber-900 block"><i class="fa-solid fa-chart-line text-emerald-600 mr-1"></i> 行銷效益分析：</span>
+                            <ul class="text-[11px] text-slate-700 space-y-1.5 list-disc list-inside font-medium">
+                                <li><strong>營收大盤拉升 +22%</strong>：確保主力流量最大化變現，穩固整體營收規模。</li>
+                                <li><strong>下單轉化率提升 +18.5%</strong>：有效縮短買家猶豫期，推動即刻決策。</li>
+                                <li><strong>現金流回籠加速</strong>：高週轉速度縮短資金占用週期，維持健全營運資金與不斷貨優勢。</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- B Category Strategy Card -->
+                    <div class="bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-200 p-6 rounded-3xl space-y-4 shadow-sm relative overflow-hidden">
+                        <div class="flex items-center justify-between">
+                            <span class="bg-indigo-600 text-white font-extrabold text-xs px-3 py-1 rounded-xl shadow-sm">B 類經營策略</span>
+                            <span class="text-xs font-bold text-indigo-800"><i class="fa-solid fa-tags mr-1"></i>毛利與顧客價值極大化</span>
+                        </div>
+                        <div class="space-y-2">
+                            <h4 class="font-bold text-slate-900 text-sm">B 類策略：最大化整體毛利率、提升客戶終身價值</h4>
+                        </div>
+                        <div class="bg-white/90 backdrop-blur-sm p-4 rounded-2xl border border-indigo-200 space-y-2">
+                            <span class="text-xs font-extrabold text-indigo-900 block"><i class="fa-solid fa-chart-line text-emerald-600 mr-1"></i> 行銷效益分析：</span>
+                            <ul class="text-[11px] text-slate-700 space-y-1.5 list-disc list-inside font-medium">
+                                <li><strong>平均客單價 (AOV) 提升 +24%</strong>：成功驅動顧客選擇更高規格配置，拉升單筆交易價值。</li>
+                                <li><strong>整體毛利率擴張 +3.5%</strong>：高毛利結構優化整體獲利表現。</li>
+                                <li><strong>客戶終身價值 (LTV) 增長</strong>：高滿意度與黏著度大幅提高高階買家之長期回購率。</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- C Category Strategy Card -->
+                    <div class="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 p-6 rounded-3xl space-y-4 shadow-sm relative overflow-hidden">
+                        <div class="flex items-center justify-between">
+                            <span class="bg-emerald-600 text-white font-extrabold text-xs px-3 py-1 rounded-xl shadow-sm">C 類經營策略</span>
+                            <span class="text-xs font-bold text-emerald-800"><i class="fa-solid fa-gift mr-1"></i>庫存去化與品項豐富度</span>
+                        </div>
+                        <div class="space-y-2">
+                            <h4 class="font-bold text-slate-900 text-sm">C 類策略：加速庫存變現、降低滯銷風險、維持品項豐富度</h4>
+                        </div>
+                        <div class="bg-white/90 backdrop-blur-sm p-4 rounded-2xl border border-emerald-200 space-y-2">
+                            <span class="text-xs font-extrabold text-emerald-900 block"><i class="fa-solid fa-chart-line text-emerald-600 mr-1"></i> 行銷效益分析：</span>
+                            <ul class="text-[11px] text-slate-700 space-y-1.5 list-disc list-inside font-medium">
+                                <li><strong>長尾商品去化速度 +35%</strong>：有效降低庫存呆滯與跌價損失風險，加速資金變現。</li>
+                                <li><strong>提升整體購買意願</strong>：創造高感知價值，有效降低消費者進場門檻。</li>
+                                <li><strong>維持品項豐富度與市場覆蓋率</strong>：兼顧多元與特殊需求買家，確保商城品項之完整性。</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Category A Real-time Inventory Monitor & Restock Section -->
+            <div class="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-bold text-amber-600 uppercase tracking-widest">Real-time Stock Monitor</span>
+                            <span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-md"><i class="fa-solid fa-bolt"></i> A 類即時庫存</span>
+                        </div>
+                        <h3 class="text-xl font-extrabold text-slate-900 mt-0.5">A 類主力品項庫存監視與一鍵補貨 (確保不斷貨)</h3>
+                        <p class="text-slate-500 text-xs mt-0.5">後台監視 A 類衝刺營收品項之庫存狀態，低於 10 台自動警示並可直接使用「一鍵補貨」恢復充足安全庫存。</p>
+                    </div>
+                    <button onclick="batchRestockCategoryA()" class="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-md transition-all flex items-center gap-1.5 self-start md:self-auto">
+                        <i class="fa-solid fa-boxes-packing"></i> 全部 A 類一鍵補滿 (+20台)
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="category-a-monitor-grid">
+                    <!-- Dynamic Category A Items Status -->
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm lg:col-span-2 flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-slate-900 text-base">營業額趨勢 (Revenue Trend)</h3>
+                        <span class="text-xs text-slate-400 font-semibold" id="chart-period-tag">2026 數據分析</span>
+                    </div>
+                    <div class="relative h-72 w-full">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-slate-900 text-base">品牌銷售佔比</h3>
+                        <span class="text-xs text-slate-400 font-semibold">按銷售額</span>
+                    </div>
+                    <div class="relative h-64 w-full flex items-center justify-center">
+                        <canvas id="brandChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Sales Report -->
+            <div class="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <span class="text-xs font-bold text-brand-600 uppercase tracking-widest">Sales & Strategy Breakdown</span>
+                        <h3 class="text-xl font-extrabold text-slate-900 mt-0.5">銷售與經營策略分類明細報表</h3>
+                        <p class="text-slate-500 text-xs mt-0.5">列出各品項之經營策略類別 (A/B/C)、即時庫存、銷量、銷售總額與對應策略標記。</p>
+                    </div>
+                    <button onclick="exportReportCSV()" class="bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold px-4 py-2.5 rounded-xl border border-slate-200 transition-all flex items-center gap-1.5 self-start md:self-auto">
+                        <i class="fa-solid fa-download"></i> 下載此報表 (.csv)
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs border-collapse">
+                        <thead>
+                            <tr class="bg-slate-100 border-b border-slate-200 text-slate-700">
+                                <th class="p-3 font-bold">筆電型號</th>
+                                <th class="p-3 font-bold">分類</th>
+                                <th class="p-3 font-bold text-center">經營策略類別</th>
+                                <th class="p-3 font-bold text-center">即時庫存</th>
+                                <th class="p-3 font-bold text-right">銷量 (台)</th>
+                                <th class="p-3 font-bold text-right">銷售總額 (NT$)</th>
+                                <th class="p-3 font-bold text-right">預估淨利 (NT$)</th>
+                                <th class="p-3 font-bold text-center">策略與行銷效益標記</th>
+                                <th class="p-3 font-bold text-center">補貨操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="detailed-sales-report-body" class="divide-y divide-slate-100 font-medium">
+                            <!-- Dynamically generated -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Product Performance Cross-Comparison -->
+            <div class="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <span class="text-xs font-bold text-brand-600 uppercase tracking-widest">Performance Cross-Comparison</span>
+                        <h3 class="text-xl font-extrabold text-slate-900 mt-0.5">單品銷量與利潤交叉比較工具</h3>
+                        <p class="text-slate-500 text-xs mt-0.5">選擇兩款筆電進行經營策略、銷量、營收與毛利率的詳細分析對比。</p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-500 mb-1">筆電 A</label>
+                            <select id="compare-select-1" onchange="updateSalesComparison()" class="bg-slate-50 border border-slate-300 text-slate-700 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-brand-500 font-semibold w-44">
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-500 mb-1">筆電 B</label>
+                            <select id="compare-select-2" onchange="updateSalesComparison()" class="bg-slate-50 border border-slate-300 text-slate-700 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-brand-500 font-semibold w-44">
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div id="sales-comparison-result" class="overflow-x-auto">
+                    <!-- Dynamic Table -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-950 text-slate-400 text-xs py-12 border-t border-slate-900 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+            <div class="space-y-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 bg-gradient-to-tr from-indigo-600 to-cyan-500 rounded-xl flex items-center justify-center text-white shadow-md">
+                        <i class="fa-solid fa-microchip text-base transform -rotate-6"></i>
+                    </div>
+                    <span class="text-base font-bold text-white">Lapzone</span>
+                </div>
+                <p class="text-slate-500 leading-relaxed">
+                    Lapzone 現代筆電旗艦商城與後台經營策略分析系統，提供專業規格比較、A/B/C 類行銷優惠與數據決策支援。
+                </p>
+            </div>
+            <div>
+                <h4 class="text-white font-semibold mb-3 tracking-wider uppercase">筆電分類</h4>
+                <ul class="space-y-2">
+                    <li><a href="#products" onclick="switchView('store'); filterCategory('aipc')" class="hover:text-white transition-colors text-indigo-400 font-semibold">AIPC 新旗艦筆電</a></li>
+                    <li><a href="#products" onclick="switchView('store'); filterCategory('ultrabook')" class="hover:text-white transition-colors">輕薄文書筆電</a></li>
+                    <li><a href="#products" onclick="switchView('store'); filterCategory('gaming')" class="hover:text-white transition-colors">極速電競筆電</a></li>
+                    <li><a href="#products" onclick="switchView('store'); filterCategory('creator')" class="hover:text-white transition-colors">創作者繪圖筆電</a></li>
+                    <li><a href="#products" onclick="switchView('store'); filterCategory('business')" class="hover:text-white transition-colors">商務辦公筆電</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="text-white font-semibold mb-3 tracking-wider uppercase">快捷選購工具</h4>
+                <ul class="space-y-2">
+                    <li><button onclick="openQuizModal()" class="text-indigo-400 hover:text-indigo-300 font-semibold">智慧選機問卷助手</button></li>
+                    <li><button onclick="openOrderLookupModal()" class="hover:text-white transition-colors">訂單查詢與單據</button></li>
+                    <li><button onclick="openComparisonModal()" class="hover:text-white transition-colors">規格比較工具</button></li>
+                    <li><button onclick="requestAdminAccess()" class="hover:text-white transition-colors">後台分析儀表板</button></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="text-white font-semibold mb-3 tracking-wider uppercase">訂閱最新優惠</h4>
+                <p class="text-slate-500 mb-3">訂閱電子報，第一時間掌握 AIPC 新品上市與折扣優惠碼！</p>
+                <div class="flex gap-2">
+                    <input type="email" placeholder="輸入您的 Email" class="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-brand-500 w-full">
+                    <button onclick="showToast('訂閱成功', '獨家專屬 95 折折扣碼已寄至您的信箱！');" class="bg-brand-600 hover:bg-brand-500 text-white px-3.5 py-2 rounded-xl font-semibold transition-all">訂閱</button>
+                </div>
+            </div>
+        </div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 border-t border-slate-900/80 text-center text-slate-600">
+            &copy; 2026 Lapzone Laptop Store & Strategy Analytics. All rights reserved.
+        </div>
+    </footer>
+
+    <!-- ==================== MODALS & DRAWERS ==================== -->
+    <!-- 1. Product Detail Modal -->
+    <div id="product-modal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative p-6 md:p-8">
+            <button onclick="closeProductModal()" class="absolute top-4 right-4 z-10 w-9 h-9 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-full flex items-center justify-center transition-all">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div id="modal-content"></div>
+        </div>
+    </div>
+
+    <!-- 2. Custom PC Builder / Configurator Modal -->
+    <div id="configurator-modal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative p-6 md:p-8">
+            <button onclick="closeConfiguratorModal()" class="absolute top-4 right-4 z-10 w-9 h-9 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-full flex items-center justify-center">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="flex items-center gap-2 text-brand-600 font-bold text-xs uppercase tracking-wider mb-1">
+                <i class="fa-solid fa-sliders"></i> Custom PC Builder & Strategy Discount
+            </div>
+            <h3 class="text-2xl font-extrabold text-slate-900 mb-1">客製化筆電規格選配器</h3>
+            <p class="text-slate-500 text-xs mb-6">根據您的需求升級記憶體、硬碟與系統保固服務（B 類品項升級任一項目即享整台筆電 95 折優惠！）。</p>
+            <div id="configurator-content"></div>
+        </div>
+    </div>
+
+    <!-- 3. Quiz Wizard Modal -->
+    <div id="quiz-modal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-3xl max-w-xl w-full shadow-2xl relative p-6 md:p-8 space-y-6">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-200">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-wand-magic-sparkles text-indigo-600 text-lg"></i>
+                    <div>
+                        <h3 class="font-extrabold text-lg text-slate-900">智慧選機助手</h3>
+                        <p class="text-[11px] text-slate-400">設定您的多重使用情境與預算偏好，進行 100% 嚴格交叉篩選與評分</p>
+                    </div>
+                </div>
+                <button onclick="closeQuizModal()" class="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-700 hover:bg-slate-200"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="space-y-4 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                        <i class="fa-solid fa-laptop text-brand-600"></i> 1. 主要用途類別
+                    </label>
+                    <select id="quiz-use" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 font-semibold text-slate-800 focus:outline-none focus:border-brand-500">
+                        <option value="aipc">🤖 Copilot+ AIPC / AI 算力與生成式應用</option>
+                        <option value="ultrabook">💻 輕薄文書 / 攜帶上課 / 簡報追劇</option>
+                        <option value="gaming">🎮 極速電競 / 3A 大作高畫質 / 光線追蹤</option>
+                        <option value="creator">🎨 專業 3D 繪圖 / 4K 剪輯 / 多媒體創作</option>
+                        <option value="business">💼 商務辦公 / 高安全性 / 長效續航</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                        <i class="fa-solid fa-wallet text-brand-600"></i> 2. 預算範圍
+                    </label>
+                    <select id="quiz-budget" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 font-semibold text-slate-800 focus:outline-none focus:border-brand-500">
+                        <option value="any">不限預算 (精準推薦最佳規格)</option>
+                        <option value="under40k">NT$ 40,000 以下 (親民高 CP 值首選)</option>
+                        <option value="40kto60k">NT$ 40,000 - 60,000 (主流中高階)</option>
+                        <option value="above60k">NT$ 60,000 以上 (頂級旗艦/重度玩家)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                        <i class="fa-solid fa-copyright text-brand-600"></i> 3. 偏好品牌
+                    </label>
+                    <select id="quiz-brand" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 font-semibold text-slate-800 focus:outline-none focus:border-brand-500">
+                        <option value="any">不限品牌 (推薦全品牌最佳者)</option>
+                        <option value="ASUS">ASUS 華碩</option>
+                        <option value="Apple">Apple 蘋果</option>
+                        <option value="Lenovo">Lenovo 聯想</option>
+                        <option value="Dell">Dell 戴爾</option>
+                        <option value="HP">HP 惠普</option>
+                        <option value="MSI">MSI 微星</option>
+                        <option value="Acer">Acer 宏碁</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                        <i class="fa-solid fa-weight-hanging text-brand-600"></i> 4. 機身重量與螢幕需求
+                    </label>
+                    <select id="quiz-weight" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 font-semibold text-slate-800 focus:outline-none focus:border-brand-500">
+                        <option value="any">不限 (均衡考量)</option>
+                        <option value="ultra-light">極致輕薄攜帶 (&lt; 1.3 kg)</option>
+                        <option value="large-screen">大螢幕視覺效果 (15/16 吋以上大螢幕)</option>
+                        <option value="performance-heavy">效能優先 (電競/繪圖效能導向)</option>
+                    </select>
+                </div>
+
+                <button onclick="submitQuiz()" class="w-full bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white font-bold py-3.5 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 text-sm mt-2">
+                    <i class="fa-solid fa-compass"></i> 開始智慧交叉篩選與算力比對
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Laptop Guide Modal -->
+    <div id="guide-modal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-3xl max-w-2xl w-full shadow-2xl relative p-6 md:p-8 space-y-6">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-200">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-book-open text-amber-500 text-lg"></i>
+                    <h3 class="font-extrabold text-lg text-slate-900">2026 筆電選購與經營策略指南</h3>
+                </div>
+                <button onclick="closeGuideModal()" class="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-700 hover:bg-slate-200"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="space-y-4 text-xs text-slate-600 leading-relaxed max-h-[60vh] overflow-y-auto">
+                <div class="bg-amber-50 p-4 rounded-2xl border border-amber-200">
+                    <h4 class="font-bold text-amber-900 text-sm mb-1"><i class="fa-solid fa-fire text-amber-600 mr-1"></i> A 類經營策略說明</h4>
+                    <p><strong>【衝刺營收規模・維持現金流・確保不斷貨】</strong>：針對爆款與主力銷售品項，當庫存 &ge; 10 台顯示現貨速出標籤；&lt; 10 台自動觸發緊張標籤促成顧客搶購，後台支援一鍵補貨，極大化營收與資金週轉。</p>
+                </div>
+                <div class="bg-indigo-50 p-4 rounded-2xl border border-indigo-200">
+                    <h4 class="font-bold text-indigo-900 text-sm mb-1"><i class="fa-solid fa-tags text-indigo-600 mr-1"></i> B 類經營策略說明</h4>
+                    <p><strong>【最大化整體毛利率・提升客戶終身價值】</strong>：B 類筆電購買時升級 RAM、SSD 或保固，全機結帳即打 95 折，刺激顧客選購高單價擴充套件，拉升平均客單價與整體毛利。</p>
+                </div>
+                <div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-200">
+                    <h4 class="font-bold text-emerald-900 text-sm mb-1"><i class="fa-solid fa-gift text-emerald-600 mr-1"></i> C 類經營策略說明</h4>
+                    <p><strong>【加速庫存變現・降低滯銷風險・維持品項豐富度】</strong>：C 類長尾及 AIPC 筆電購買即贈送精選無線滑鼠與機械鍵盤禮包，以低成本創造高超值感，促進庫存變現與保留多元品項。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. Order Lookup Modal -->
+    <div id="order-lookup-modal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-3xl max-w-lg w-full shadow-2xl relative p-6 md:p-8 space-y-6">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-200">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-magnifying-glass-location text-brand-600 text-lg"></i>
+                    <h3 class="font-extrabold text-lg text-slate-900">線上訂單查詢系統</h3>
+                </div>
+                <button onclick="closeOrderLookupModal()" class="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-700 hover:bg-slate-200"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="space-y-4 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">輸入訂單編號或聯絡電話</label>
+                    <input type="text" id="lookup-input" placeholder="例如：TV-849201 或 0912345678" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 font-semibold text-slate-800 focus:outline-none focus:border-brand-500">
+                </div>
+                <button onclick="searchOrders()" class="w-full bg-brand-600 hover:bg-brand-500 text-white font-bold py-3 rounded-xl shadow-md transition-all">
+                    開始查詢
+                </button>
+                <div id="order-lookup-results" class="pt-2"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. User Profile Modal -->
+    <div id="profile-modal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl relative p-6 md:p-8 space-y-6">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-200">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-user-circle text-brand-600 text-xl"></i>
+                    <h3 class="font-extrabold text-lg text-slate-900">會員中心與個人偏好</h3>
+                </div>
+                <button onclick="closeProfileModal()" class="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-700 hover:bg-slate-200"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="space-y-4 text-xs">
+                <div class="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                    <div class="w-12 h-12 bg-brand-600 text-white font-bold rounded-2xl flex items-center justify-center text-lg shadow-md">
+                        VIP
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-slate-900 text-sm">Lapzone 尊榮會員</h4>
+                        <p class="text-slate-500 text-[11px]">user@lapzone.com</p>
+                        <span class="inline-block bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded text-[10px] mt-1">已認證 VIP</span>
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <label class="block font-bold text-slate-700">筆電偏好類型設定</label>
+                    <select class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 font-semibold text-slate-800">
+                        <option>A 類衝刺規模現貨速出型</option>
+                        <option>B 類選配升級 95 折毛利擴張型</option>
+                        <option>C 類買就送豪華鍵鼠加速變現型</option>
+                        <option>Copilot+ AIPC 算力與生成式 AI 導向</option>
+                    </select>
+                </div>
+                <button onclick="closeProfileModal(); showToast('偏好儲存', '個人偏好設定已成功更新！');" class="w-full bg-brand-600 hover:bg-brand-500 text-white font-bold py-3 rounded-xl shadow-md transition-all">
+                    儲存設定
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 7. Admin Login Gate Modal -->
+    <div id="admin-login-modal" class="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl relative p-6 md:p-8 space-y-6 border border-slate-200">
+            <button onclick="closeAdminLoginModal()" class="absolute top-4 right-4 z-10 w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-700 hover:bg-slate-200">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="text-center space-y-2">
+                <div class="w-14 h-14 bg-brand-50 text-brand-600 rounded-2xl flex items-center justify-center text-2xl mx-auto border border-brand-100 shadow-inner">
+                    <i class="fa-solid fa-user-lock"></i>
+                </div>
+                <h3 class="text-2xl font-extrabold text-slate-900">後台管理員身份驗證</h3>
+                <p class="text-xs text-slate-500">請輸入管理員帳號與密碼以進入經營策略、庫存監控與行銷效益頁面。</p>
+            </div>
+            <form onsubmit="handleAdminLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">管理者帳號</label>
+                    <input type="text" id="admin-username-input" required placeholder="預設帳號：admin" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-brand-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">管理者密碼</label>
+                    <div class="relative">
+                        <input type="password" id="admin-password-input" required placeholder="預設密碼：1234" class="w-full bg-slate-50 border border-slate-300 rounded-xl pl-3.5 pr-10 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-brand-500">
+                        <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 text-sm">
+                            <i id="password-eye-icon" class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+                    <p id="admin-login-error" class="text-rose-500 font-bold text-[11px] mt-1.5 hidden flex items-center gap-1">
+                        <i class="fa-solid fa-circle-exclamation"></i> 帳號或密碼錯誤！預設帳號為 <strong>admin</strong>，密碼為 <strong>1234</strong>
+                    </p>
+                </div>
+                <button type="submit" class="w-full bg-brand-600 hover:bg-brand-500 text-white font-bold py-3 rounded-xl shadow-lg transition-all text-xs flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-key"></i> 登入經營策略後台
+                </button>
+            </form>
+            <div class="text-center text-[11px] text-slate-400">
+                提示：測試用管理者預設帳號 <span class="bg-slate-100 px-1.5 py-0.5 rounded font-mono font-bold text-slate-700">admin</span> / 密碼 <span class="bg-slate-100 px-1.5 py-0.5 rounded font-mono font-bold text-slate-700">1234</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // Global State & Data Models
+        let currentView = 'store';
+        let isAdminAuthenticated = false;
+        let selectedCategory = 'all';
+        let searchQuery = '';
+        let aiRecommendedProducts = null;
+        let cart = [];
+        let wishlist = [];
+        let compareList = [];
+        let currentConfigProduct = null;
+        let configState = { ram: 0, storage: 0, warranty: 0 };
+
+        // Laptop Products Database with Updated Strategy Categorization (A/B/C) & Inventory Stock Tracking
+        const products = [
+            // ==================== 1. 輕薄文書 (Ultrabook - 5 款) ====================
+            {
+                id: 1,
+                name: "MacBook Air 15 M3",
+                category: "ultrabook",
+                strategyTier: "A",
+                stock: 14, // >= 10: 現貨供應
+                brand: "Apple",
+                price: 42900,
+                originalPrice: 46900,
+                cost: 29500,
+                rating: 4.9,
+                reviewsCount: 228,
+                image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRkmQsmiBkhxSgvVkJldj1Wf0ejaavMnKN8bCFaBSs2B7xCJ8NjPG18-E4&s=10",
+                specs: { cpu: "Apple M3 8核心", gpu: "10核心 GPU", ram: "16GB 統一記憶體", storage: "512GB SSD", weight: "1.51 kg", battery: "最高 18 小時" },
+                sales: 142,
+                revenue: 6091800,
+                profitMargin: 31,
+                returnRate: 0.8
+            },
+            {
+                id: 6,
+                name: "Zenbook 14 OLED",
+                category: "ultrabook",
+                strategyTier: "A",
+                stock: 4, // < 10: 庫存緊張
+                brand: "ASUS",
+                price: 33900,
+                originalPrice: 37900,
+                cost: 23500,
+                rating: 4.8,
+                reviewsCount: 188,
+                image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSozxOPUjn9MjEt_q2hCnZ43U5TVjwchyiu9LlwKo367g&s=10",
+                specs: { cpu: "Intel Core Ultra 5", gpu: "Intel Graphics", ram: "16GB RAM", storage: "512GB SSD", weight: "1.2 kg", battery: "最高 16 小時" },
+                sales: 135,
+                revenue: 4576500,
+                profitMargin: 30,
+                returnRate: 0.7
+            },
+            {
+                id: 7,
+                name: "Dell XPS 13 Plus",
+                category: "ultrabook",
+                strategyTier: "A",
+                stock: 18,
+                brand: "Dell",
+                price: 45900,
+                originalPrice: 49900,
+                cost: 31500,
+                rating: 4.7,
+                reviewsCount: 152,
+                image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRe3GC8QOsQhty4u-ANmIVbnoxzY-uCeW7iOhZyaVsngCFSIJojSxwpxFs&s=10",
+                specs: { cpu: "Intel Core Ultra 7 155H", gpu: "Intel Arc Graphics", ram: "16GB LPDDR5x", storage: "1TB PCIe NVMe", weight: "1.24 kg", battery: "最高 14 小時" },
+                sales: 118,
+                revenue: 5416200,
+                profitMargin: 31,
+                returnRate: 0.9
+            },
+            {
+                id: 8,
+                name: "HP Spectre x360 14",
+                category: "ultrabook",
+                strategyTier: "A",
+                stock: 3, // < 10: 庫存緊張
+                brand: "HP",
+                price: 43900,
+                originalPrice: 47900,
+                cost: 30000,
+                rating: 4.8,
+                reviewsCount: 135,
+                image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ0OuNXm9THx8G5YAkhmcRD3Odpt3vGCw1cFvwUlOSSJ3qkqDWUtDzsmPDB&s=10",
+                specs: { cpu: "Intel Core Ultra 7 155H", gpu: "Intel Arc Graphics", ram: "16GB LPDDR5x", storage: "1TB SSD", weight: "1.44 kg", battery: "最高 15 小時" },
+                sales: 110,
+                revenue: 4829000,
+                profitMargin: 31,
+                returnRate: 0.8
+            },
+            {
+                id: 9,
+                name: "LG gram SuperSlim 15",
+                category: "ultrabook",
+                strategyTier: "B",
+                stock: 15,
+                brand: "LG",
+                price: 39900,
+                originalPrice: 43900,
+                cost: 27500,
+                rating: 4.8,
+                reviewsCount: 124,
+                image: "https://www.lg.com/content/dam/channel/wcms/tw/images/laptop/15z90st-g_aa52c2_eatt_tw_c/gallery/large04.jpg?w=800",
+                specs: { cpu: "Intel Core i7-1360P", gpu: "Intel Iris Xe", ram: "16GB LPDDR5", storage: "512GB SSD", weight: "0.99 kg", battery: "最高 20 小時" },
+                sales: 32,
+                revenue: 1276800,
+                profitMargin: 31,
+                returnRate: 0.6
+            },
+
+            // ==================== 2. 電競遊戲 (Gaming - 5 款) ====================
+            {
+                id: 2,
+                name: "Zephyrus Pro 16 OLED",
+                category: "gaming",
+                strategyTier: "B",
+                stock: 12,
+                brand: "ASUS",
+                price: 47900,
+                originalPrice: 52900,
+                cost: 35000,
+                rating: 4.8,
+                reviewsCount: 94,
+                image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSfzLNAm2_6erPymS27FTDYy0bd2KreeopcLKOcuVdQI9B5btw_UbP6raQ&s=10",
+                specs: { cpu: "Intel Core Ultra 9", gpu: "NVIDIA RTX 4070", ram: "32GB DDR5", storage: "1TB PCIe 4.0 SSD", weight: "1.85 kg", battery: "最高 10 小時" },
+                sales: 26,
+                revenue: 1245400,
+                profitMargin: 27,
+                returnRate: 1.5
+            },
+            {
+                id: 5,
+                name: "ROG Strix SCAR 18",
+                category: "gaming",
+                strategyTier: "B",
+                stock: 8,
+                brand: "ASUS",
+                price: 89900,
+                originalPrice: 96900,
+                cost: 66000,
+                rating: 4.9,
+                reviewsCount: 45,
+                image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTDvrax310AxpsG7nggPKEhNZAoyudXLJrpX7s67Lvl9A&s=10",
+                specs: { cpu: "Intel i9-14900HX", gpu: "NVIDIA RTX 4080", ram: "64GB DDR5", storage: "2TB RAID SSD", weight: "3.1 kg", battery: "最高 6 小時" },
+                sales: 14,
+                revenue: 1258600,
+                profitMargin: 26,
+                returnRate: 2.0
+            },
+            {
+                id: 10,
+                name: "Legion Pro 7i Gen 9",
+                category: "gaming",
+                strategyTier: "B",
+                stock: 10,
+                brand: "Lenovo",
+                price: 69900,
+                originalPrice: 75900,
+                cost: 51000,
+                rating: 4.9,
+                reviewsCount: 83,
+                image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSM8U4nONv_hvaLpaES4anJ4PrbJsc6LmZMAWScsvAhmSSmQZy7E9jOJvLN&s=10",
+                specs: { cpu: "Intel i9-14900HX", gpu: "NVIDIA RTX 4080 12GB", ram: "32GB DDR5", storage: "1TB PCIe 4.0 SSD", weight: "2.8 kg", battery: "最高 7 小時" },
+                sales: 18,
+                revenue: 1258200,
+                profitMargin: 27,
+                returnRate: 1.6
+            },
+            {
+                id: 11,
+                name: "MSI Raider GE78 HX",
+                category: "gaming",
+                strategyTier: "B",
+                stock: 7,
+                brand: "MSI",
+                price: 76900,
+                originalPrice: 82900,
+                cost: 56000,
+                rating: 4.7,
+                reviewsCount: 51,
+                image: "https://img.pchome.com.tw/cs/items/DHAKAZA900JWVUR/000007_1776839799.jpg?width=320",
+                specs: { cpu: "Intel i9-14900HX", gpu: "NVIDIA RTX 4080", ram: "32GB DDR5", storage: "2TB PCIe SSD", weight: "3.0 kg", battery: "最高 5.5 小時" },
+                sales: 16,
+                revenue: 1230400,
+                profitMargin: 27,
+                returnRate: 1.8
+            },
+            {
+                id: 12,
+                name: "Razer Blade 16",
+                category: "gaming",
+                strategyTier: "C",
+                stock: 6,
+                brand: "Razer",
+                price: 92900,
+                originalPrice: 99900,
+                cost: 68000,
+                rating: 4.8,
+                reviewsCount: 39,
+                image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTnoELh5_PMRoP1esm8r_2oG1VkIjcLoEyyyGK8QX2brg&s=10",
+                specs: { cpu: "Intel i9-14900HX", gpu: "NVIDIA RTX 4090", ram: "32GB DDR5", storage: "2TB NVMe SSD", weight: "2.45 kg", battery: "最高 6 小時" },
+                sales: 3,
+                revenue: 278700,
+                profitMargin: 26,
+                returnRate: 1.5
+            },
+
+            // ==================== 3. 創作者繪圖 (Creator - 5 款) ====================
+            {
+                id: 3,
+                name: "Creator Studio 14 OLED",
+                category: "creator",
+                strategyTier: "C",
+                stock: 9,
+                brand: "MSI",
+                price: 54900,
+                originalPrice: 59900,
+                cost: 38000,
+                rating: 4.7,
+                reviewsCount: 62,
+                image: "https://dlcdnwebimgs.asus.com/gain/096bd769-b48d-41ea-9eb5-7d305aa8a6fe/w800",
+                specs: { cpu: "Intel Core i9-13900H", gpu: "NVIDIA RTX 4060", ram: "32GB RAM", storage: "2TB NVMe SSD", weight: "1.6 kg", battery: "最高 12 小時" },
+                sales: 5,
+                revenue: 274500,
+                profitMargin: 30,
+                returnRate: 1.1
+            },
+            {
+                id: 13,
+                name: "MacBook Pro 16 M3 Max",
+                category: "creator",
+                strategyTier: "B",
+                stock: 11,
+                brand: "Apple",
+                price: 114900,
+                originalPrice: 119900,
+                cost: 78000,
+                rating: 5.0,
+                reviewsCount: 142,
+                image: "https://3c.yipee.cc/wp-content/uploads/2023/10/Macbook-Pro-720x441.jpg",
+                specs: { cpu: "Apple M3 Max 16核心", gpu: "40核心 GPU", ram: "48GB 統一記憶體", storage: "1TB SSD", weight: "2.14 kg", battery: "最高 22 小時" },
+                sales: 11,
+                revenue: 1263900,
+                profitMargin: 32,
+                returnRate: 0.5
+            },
+            {
+                id: 14,
+                name: "ProArt Studiobook 16 OLED",
+                category: "creator",
+                strategyTier: "C",
+                stock: 8,
+                brand: "ASUS",
+                price: 68900,
+                originalPrice: 74900,
+                cost: 47000,
+                rating: 4.8,
+                reviewsCount: 47,
+                image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTANzlywpbVWrcRFM4pYNxPVcpeLkdo_Z-tqCjp03bof-Ri9DnWwtBgwaVo&s=10",
+                specs: { cpu: "Intel i9-13980HX", gpu: "NVIDIA RTX 4070 8GB", ram: "64GB DDR5", storage: "2TB NVMe SSD", weight: "2.4 kg", battery: "最高 9.5 小時" },
+                sales: 4,
+                revenue: 275600,
+                profitMargin: 31,
+                returnRate: 1.0
+            },
+            {
+                id: 15,
+                name: "Dell XPS 16 9640 OLED",
+                category: "creator",
+                strategyTier: "C",
+                stock: 7,
+                brand: "Dell",
+                price: 72900,
+                originalPrice: 78900,
+                cost: 50000,
+                rating: 4.7,
+                reviewsCount: 38,
+                image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT-e7doMn2NMkdXwAG2gUl_zDcrPoO5g7ekVddoaQagmA&s=10",
+                specs: { cpu: "Intel Core Ultra 9 185H", gpu: "NVIDIA RTX 4070", ram: "32GB LPDDR5x", storage: "1TB SSD", weight: "2.2 kg", battery: "最高 11 小時" },
+                sales: 3,
+                revenue: 218700,
+                profitMargin: 31,
+                returnRate: 0.9
+            },
+            {
+                id: 16,
+                name: "Gigabyte AERO 16 OLED",
+                category: "creator",
+                strategyTier: "C",
+                stock: 12,
+                brand: "Gigabyte",
+                price: 58900,
+                originalPrice: 63900,
+                cost: 41000,
+                rating: 4.6,
+                reviewsCount: 53,
+                image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSo0Sk109wQKfbPUvw2O6NAbG3xfFZmWDHnGx3d83SLFA&s=10",
+                specs: { cpu: "Intel Core i9-13900H", gpu: "NVIDIA RTX 4070", ram: "32GB DDR5", storage: "1TB Gen4 SSD", weight: "1.9 kg", battery: "最高 8.5 小時" },
+                sales: 4,
+                revenue: 235600,
+                profitMargin: 30,
+                returnRate: 1.1
+            },
+
+            // ==================== 4. AIPC 新旗艦 (Copilot+ PC - 專屬 5 款) ====================
+            {
+                id: 21,
+                name: "ASUS Zenbook S 16 Copilot+ PC",
+                category: "aipc",
+                strategyTier: "C",
+                stock: 15,
+                brand: "ASUS",
+                price: 54900,
+                originalPrice: 59900,
+                cost: 39500,
+                rating: 4.9,
+                reviewsCount: 112,
+                image: "https://dlcdnwebimgs.asus.com/gain/e97492e6-522c-4d0f-b589-75bc58d70454/",
+                specs: { cpu: "AMD Ryzen AI 9 HX 370", gpu: "Radeon 890M (50 TOPS NPU)", ram: "32GB LPDDR5X", storage: "1TB PCIe 4.0 SSD", weight: "1.5 kg", battery: "最高 21 小時" },
+                sales: 4,
+                revenue: 219600,
+                profitMargin: 28,
+                returnRate: 0.6
+            },
+            {
+                id: 22,
+                name: "Lenovo Yoga Slim 7x Copilot+ PC",
+                category: "aipc",
+                strategyTier: "C",
+                stock: 9,
+                brand: "Lenovo",
+                price: 46900,
+                originalPrice: 51900,
+                cost: 33700,
+                rating: 4.8,
+                reviewsCount: 94,
+                image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRyxKPFnRafzgDK1by4MMvHJjme9qpSVUd5DU-TONRMp6yOaQjvXX8DGUKM&s=10",
+                specs: { cpu: "Snapdragon X Elite X1E-78-100", gpu: "Qualcomm Adreno (45 TOPS NPU)", ram: "32GB LPDDR5X", storage: "1TB NVMe SSD", weight: "1.28 kg", battery: "最高 22 小時" },
+                sales: 4,
+                revenue: 187600,
+                profitMargin: 28,
+                returnRate: 0.7
+            },
+            {
+                id: 23,
+                name: "Dell XPS 13 Copilot+ PC",
+                category: "aipc",
+                strategyTier: "C",
+                stock: 14,
+                brand: "Dell",
+                price: 58900,
+                originalPrice: 63900,
+                cost: 41800,
+                rating: 4.9,
+                reviewsCount: 88,
+                image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSAPS1cR_L9nwRRUcYanM_AdEqo2GeGSKL9OnNEiipxRm9hXSwYG_iCsQ8&s=10",
+                specs: { cpu: "Intel Core Ultra 7 258V", gpu: "Intel Arc Graphics (47 TOPS NPU)", ram: "32GB LPDDR5X", storage: "1TB SSD", weight: "1.18 kg", battery: "最高 20 小時" },
+                sales: 3,
+                revenue: 176700,
+                profitMargin: 29,
+                returnRate: 0.5
+            },
+            {
+                id: 24,
+                name: "HP OmniBook X Copilot+ PC",
+                category: "aipc",
+                strategyTier: "C",
+                stock: 10,
+                brand: "HP",
+                price: 45900,
+                originalPrice: 49900,
+                cost: 33000,
+                rating: 4.7,
+                reviewsCount: 76,
+                image: "https://m.media-amazon.com/images/I/71SBTvuU4vL._AC_UF894,1000_QL80_.jpg",
+                specs: { cpu: "Snapdragon X Elite X1E-78-100", gpu: "Qualcomm Adreno (45 TOPS NPU)", ram: "16GB LPDDR5X", storage: "1TB SSD", weight: "1.34 kg", battery: "最高 26 小時" },
+                sales: 4,
+                revenue: 183600,
+                profitMargin: 28,
+                returnRate: 0.8
+            },
+            {
+                id: 25,
+                name: "Acer Swift 14 AI Copilot+ PC",
+                category: "aipc",
+                strategyTier: "C",
+                stock: 11,
+                brand: "Acer",
+                price: 43900,
+                originalPrice: 47900,
+                cost: 31600,
+                rating: 4.8,
+                reviewsCount: 82,
+                image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSMIw0SD4V09rNDF-K0rlpY-7kM2NMgVZh_Jfe0RXzncg&s=10",
+                specs: { cpu: "Intel Core Ultra 7 258V", gpu: "Intel Arc Graphics (47 TOPS NPU)", ram: "32GB LPDDR5X", storage: "1TB SSD", weight: "1.36 kg", battery: "最高 18 小時" },
+                sales: 4,
+                revenue: 175600,
+                profitMargin: 28,
+                returnRate: 0.6
+            },
+
+            // ==================== 5. 商務辦公 (Business - 5 款) ====================
+            {
+                id: 4,
+                name: "ThinkPad X1 Carbon Gen 12",
+                category: "business",
+                strategyTier: "C",
+                stock: 13,
+                brand: "Lenovo",
+                price: 49900,
+                originalPrice: 54900,
+                cost: 33900,
+                rating: 4.9,
+                reviewsCount: 110,
+                image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSc6Oc02oMNO9DcAVvmy028x0CdTA7GTWvao_-E0dAHmA&s=10",
+                specs: { cpu: "Intel Core Ultra 7", gpu: "Intel Arc Graphics", ram: "32GB LPDDR5x", storage: "1TB SSD", weight: "1.12 kg", battery: "最高 15 小時" },
+                sales: 4,
+                revenue: 199600,
+                profitMargin: 32,
+                returnRate: 0.8
+            },
+            {
+                id: 17,
+                name: "HP EliteBook 1040 G10",
+                category: "business",
+                strategyTier: "C",
+                stock: 8,
+                brand: "HP",
+                price: 46900,
+                originalPrice: 50900,
+                cost: 31400,
+                rating: 4.8,
+                reviewsCount: 76,
+                image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSx09i4dcyIFEcngy__sWbtM0BlD761F8cPpsi5e0ScYg&s",
+                specs: { cpu: "Intel Core i7-1360P", gpu: "Intel Iris Xe", ram: "32GB LPDDR5", storage: "1TB PCIe NVMe", weight: "1.18 kg", battery: "最高 16 小時" },
+                sales: 4,
+                revenue: 187600,
+                profitMargin: 33,
+                returnRate: 0.6
+            },
+            {
+                id: 18,
+                name: "Dell Latitude 9440 2-in-1",
+                category: "business",
+                strategyTier: "C",
+                stock: 9,
+                brand: "Dell",
+                price: 52900,
+                originalPrice: 57900,
+                cost: 36500,
+                rating: 4.7,
+                reviewsCount: 61,
+                image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSscYzpvTpxcz5JdZ9xCY7oWzujb6j4rLJWNmNwgGItnQ8K7pYSpXcddWpv&s=10",
+                specs: { cpu: "Intel Core i7-1365U vPro", gpu: "Intel Iris Xe", ram: "32GB LPDDR5x", storage: "512GB SSD", weight: "1.53 kg", battery: "最高 14 小時" },
+                sales: 3,
+                revenue: 158700,
+                profitMargin: 31,
+                returnRate: 0.9
+            },
+            {
+                id: 19,
+                name: "ExpertBook B9 OLED",
+                category: "business",
+                strategyTier: "C",
+                stock: 14,
+                brand: "ASUS",
+                price: 44900,
+                originalPrice: 48900,
+                cost: 30500,
+                rating: 4.8,
+                reviewsCount: 58,
+                image: "https://dlcdnwebimgs.asus.com/gain/cb7e3e44-88de-4fff-94ee-6f22bbb4c43b/w800",
+                specs: { cpu: "Intel Core i7-1355U", gpu: "Intel Iris Xe", ram: "32GB LPDDR5", storage: "1TB NVMe SSD", weight: "0.99 kg", battery: "最高 16 小時" },
+                sales: 4,
+                revenue: 179600,
+                profitMargin: 32,
+                returnRate: 0.7
+            },
+            {
+                id: 20,
+                name: "Surface Laptop 6 for Business",
+                category: "business",
+                strategyTier: "C",
+                stock: 7,
+                brand: "Microsoft",
+                price: 48900,
+                originalPrice: 52900,
+                cost: 33200,
+                rating: 4.7,
+                reviewsCount: 69,
+                image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTAIfIYD4jEMl-gfabPy9VXMUcH3lcEQ6kXGWlOxEaPj4c3u70edqLDvE4&s=10",
+                specs: { cpu: "Intel Core Ultra 7 165H", gpu: "Intel Arc Graphics", ram: "32GB LPDDR5x", storage: "512GB SSD", weight: "1.38 kg", battery: "最高 18.5 小時" },
+                sales: 3,
+                revenue: 146700,
+                profitMargin: 32,
+                returnRate: 0.8
+            }
+        ];
+
+        // Analytics Timeframe Data
+        const analyticsDataSets = {
+            month: {
+                revenue: "NT$ 3,428,500",
+                netProfit: "NT$ 960,180",
+                profitMargin: "平均毛利率 28.0%",
+                orders: "198 筆",
+                aov: "17,315",
+                bestseller: "MacBook Air 15 M3",
+                bestsellerSales: "142 台",
+                labels: ['1週', '2週', '3週', '4週'],
+                monthlyRev: [780000, 850000, 920000, 878500],
+                brands: [42, 24, 18, 16]
+            },
+            quarter: {
+                revenue: "NT$ 9,850,000",
+                netProfit: "NT$ 2,758,000",
+                profitMargin: "平均毛利率 28.0%",
+                orders: "560 筆",
+                aov: "17,589",
+                bestseller: "MacBook Air 15 M3",
+                bestsellerSales: "380 台",
+                labels: ['7月', '8月', '9月'],
+                monthlyRev: [3100000, 3300000, 3450000],
+                brands: [40, 26, 20, 14]
+            },
+            ytd: {
+                revenue: "NT$ 28,900,000",
+                netProfit: "NT$ 8,092,000",
+                profitMargin: "平均毛利率 28.0%",
+                orders: "1,690 筆",
+                aov: "17,100",
+                bestseller: "MacBook Air 15 M3",
+                bestsellerSales: "1,120 台",
+                labels: ['1月', '2月', '3月', '4月', '5月', '6月'],
+                monthlyRev: [4200000, 4600000, 5100000, 4800000, 5300000, 4900000],
+                brands: [41, 25, 19, 15]
+            }
+        };
+
+        // Saved Orders Database
+        const savedOrders = [
+            {
+                orderId: "TV-849201",
+                phone: "0912345678",
+                date: "2026-03-01 14:32",
+                items: [{ name: "MacBook Air 15 M3", price: 42900, config: "標準原廠規格", count: 1, strategyTag: "🔥 現貨供應・24hr 快速出貨" }],
+                total: 42900,
+                status: "已付款 / 配送中"
+            }
+        ];
+
+        // Core App Initialization & Category Filtering
+        window.addEventListener('DOMContentLoaded', () => {
+            renderProducts(products);
+            updateSalesComparisonOptions();
+            renderDetailedSalesReport();
+            renderCategoryAMonitor();
+        });
+
+        function renderProducts(list) {
+            const grid = document.getElementById('product-grid');
+            const countSpan = document.getElementById('product-count');
+            const noProducts = document.getElementById('no-products');
+            if (!grid || !countSpan || !noProducts) return;
+            
+            grid.innerHTML = '';
+            countSpan.textContent = list.length;
+            
+            if (list.length === 0) {
+                noProducts.classList.remove('hidden');
+                return;
+            }
+            
+            noProducts.classList.add('hidden');
+            list.forEach(p => {
+                const isCompared = compareList.some(item => item.id === p.id);
+                const isWishlisted = wishlist.includes(p.id);
+                const card = document.createElement('div');
+                card.className = "bg-white rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col overflow-hidden group relative";
+                
+                let html = '<div class="relative overflow-hidden bg-slate-100 h-52 cursor-pointer" onclick="openProductModal(' + p.id + ')">';
+                html += '<img src="' + p.image + '" alt="' + p.name + '" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">';
+                html += '<div class="absolute top-3 left-3 bg-slate-900/80 backdrop-blur-md text-white text-[10px] font-bold px-2.5 py-1 rounded-lg uppercase tracking-wider">' + p.brand + '</div>';
+                
+                // Strategy Badges (A/B/C)
+                if (p.strategyTier === 'A') {
+                    if (p.stock >= 10) {
+                        html += '<div class="absolute bottom-3 left-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] font-extrabold px-2.5 py-1 rounded-lg shadow-md flex items-center gap-1"><i class="fa-solid fa-fire"></i> 衝刺爆款・24hr 速出</div>';
+                    } else {
+                        html += '<div class="absolute bottom-3 left-3 bg-gradient-to-r from-rose-600 to-red-600 text-white text-[10px] font-extrabold px-2.5 py-1 rounded-lg shadow-md animate-pulse flex items-center gap-1"><i class="fa-solid fa-bolt"></i> 庫存緊張 (搶購剩 ' + p.stock + ' 台)</div>';
+                    }
+                } else if (p.strategyTier === 'B') {
+                    html += '<div class="absolute bottom-3 left-3 bg-indigo-600/90 backdrop-blur-md text-white text-[10px] font-extrabold px-2.5 py-1 rounded-lg shadow-md flex items-center gap-1"><i class="fa-solid fa-tags"></i> 選配升級享 95 折</div>';
+                } else if (p.strategyTier === 'C') {
+                    html += '<div class="absolute bottom-3 left-3 bg-emerald-600/90 backdrop-blur-md text-white text-[10px] font-extrabold px-2.5 py-1 rounded-lg shadow-md flex items-center gap-1"><i class="fa-solid fa-gift"></i> 買即送豪華鍵鼠週邊</div>';
+                }
+                
+                html += '<button onclick="event.stopPropagation(); toggleWishlist(' + p.id + ')" class="absolute top-3 right-3 w-9 h-9 bg-white/90 backdrop-blur-md rounded-xl flex items-center justify-center text-slate-700 hover:text-rose-500 shadow-md transition-all">';
+                html += '<i class="fa-solid fa-heart ' + (isWishlisted ? 'text-rose-500' : '') + '"></i></button></div>';
+                
+                html += '<div class="p-5 flex-1 flex flex-col justify-between"><div>';
+                html += '<div class="flex items-center justify-between mb-1"><div class="flex items-center gap-1.5 text-amber-500 text-xs font-bold"><i class="fa-solid fa-star"></i> <span>' + p.rating + '</span><span class="text-slate-400 font-normal">(' + p.reviewsCount + ')</span></div>';
+                
+
+                html += '</div>';
+                html += '<h3 class="font-bold text-slate-900 text-base mb-1 group-hover:text-brand-600 transition-colors cursor-pointer" onclick="openProductModal(' + p.id + ')">' + p.name + '</h3>';
+                
+                if (p.aiReason) {
+                    html += '<div class="bg-indigo-50/80 text-indigo-700 p-2 rounded-xl text-[11px] font-semibold mb-3 border border-indigo-100"><i class="fa-solid fa-circle-check text-indigo-500 mr-1"></i> Recommendation: ' + p.aiReason + '</div>';
+                } else {
+                    html += '<p class="text-xs text-slate-500 line-clamp-1 mb-2">' + p.specs.cpu + ' / ' + p.specs.gpu + ' / ' + p.specs.ram + '</p>';
+                }
+
+                if (p.strategyTier === 'C') {
+                    html += '<div class="bg-emerald-50 text-emerald-700 p-1.5 rounded-lg text-[10px] font-bold mb-3 border border-emerald-200 flex items-center gap-1"><i class="fa-solid fa-gift"></i> 下單加贈：無線滑鼠 + 機械鍵盤</div>';
+                }
+                html += '</div>';
+                
+                html += '<div><div class="flex items-baseline gap-2 mb-3">';
+                html += '<span class="text-lg font-extrabold text-slate-900">NT$ ' + p.price.toLocaleString() + '</span>';
+                html += '<span class="text-xs text-slate-400 line-through">NT$ ' + p.originalPrice.toLocaleString() + '</span></div>';
+                
+                html += '<div class="grid grid-cols-2 gap-2">';
+                html += '<button onclick="openConfiguratorModal(' + p.id + ')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1"><i class="fa-solid fa-sliders"></i> 客製選配</button>';
+                html += '<button onclick="addToCart(' + p.id + ')" class="bg-brand-600 hover:bg-brand-500 text-white py-2.5 rounded-xl text-xs font-semibold shadow-md shadow-brand-500/20 transition-all flex items-center justify-center gap-1"><i class="fa-solid fa-cart-plus"></i> 購買</button></div>';
+                
+                html += '<div class="mt-2 text-center">';
+                html += '<button onclick="toggleCompare(' + p.id + ')" class="text-[11px] ' + (isCompared ? 'text-brand-600 font-bold' : 'text-slate-400 hover:text-slate-600') + ' transition-colors">';
+                html += '<i class="fa-solid fa-scale-balanced mr-1"></i> ' + (isCompared ? '已加入比較' : '加入規格比較') + '</button></div></div></div>';
+                
+                card.innerHTML = html;
+                grid.appendChild(card);
+            });
+        }
+
+        function filterCategory(cat) {
+            selectedCategory = cat;
+            aiRecommendedProducts = null;
+            const activeBadge = document.getElementById('ai-active-badge');
+            if (activeBadge) activeBadge.classList.add('hidden');
+
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.className = "category-btn px-4 py-2 rounded-xl text-xs font-bold transition-all text-slate-600 hover:text-slate-900";
+            });
+            const selectedBtn = document.getElementById('cat-' + cat);
+            if (selectedBtn) {
+                selectedBtn.className = "category-btn px-4 py-2 rounded-xl text-xs font-bold transition-all bg-white text-slate-900 shadow-sm";
+            }
+            applyFilters();
+        }
+
+        function handleSearch(val) {
+            searchQuery = val.trim().toLowerCase();
+            applyFilters();
+        }
+
+        function applyFilters() {
+            let baseList = aiRecommendedProducts ? [...aiRecommendedProducts] : [...products];
+            
+            let list = baseList.filter(p => {
+                const matchCat = (selectedCategory === 'all' || p.category === selectedCategory);
+                const matchSearch = p.name.toLowerCase().includes(searchQuery) || p.brand.toLowerCase().includes(searchQuery) || p.specs.cpu.toLowerCase().includes(searchQuery) || p.specs.gpu.toLowerCase().includes(searchQuery);
+                return matchCat && matchSearch;
+            });
+            
+            const sortVal = document.getElementById('sort-select') ? document.getElementById('sort-select').value : 'default';
+            if (sortVal === 'price-low') list.sort((a,b) => a.price - b.price);
+            else if (sortVal === 'price-high') list.sort((a,b) => b.price - a.price);
+            else if (sortVal === 'rating') list.sort((a,b) => b.rating - a.rating);
+            
+            renderProducts(list);
+        }
+
+        function sortProducts() {
+            applyFilters();
+        }
+
+        function resetAISearch() {
+            aiRecommendedProducts = null;
+            const activeBadge = document.getElementById('ai-active-badge');
+            if (activeBadge) activeBadge.classList.add('hidden');
+            filterCategory('all');
+            showToast("重設成功", "已恢復顯示全館預設筆電列表");
+        }
+
+        // View Navigation
+        function switchView(view) {
+            currentView = view;
+            const storeView = document.getElementById('store-view');
+            const adminView = document.getElementById('admin-view');
+            const navStoreBtn = document.getElementById('nav-store-btn');
+            const navAdminBtn = document.getElementById('nav-admin-btn');
+            const searchWrap = document.getElementById('search-container-wrap');
+
+            if (view === 'store') {
+                storeView.classList.remove('hidden');
+                adminView.classList.add('hidden');
+                if (navStoreBtn) navStoreBtn.className = "text-brand-600 font-bold transition-colors";
+                if (navAdminBtn) navAdminBtn.className = "hover:text-brand-600 transition-colors flex items-center gap-1";
+                if (searchWrap) searchWrap.classList.remove('hidden');
+            } else {
+                if (!isAdminAuthenticated) {
+                    openAdminLoginModal();
+                    return;
+                }
+                storeView.classList.add('hidden');
+                adminView.classList.remove('hidden');
+                if (navAdminBtn) navAdminBtn.className = "text-brand-600 font-bold transition-colors flex items-center gap-1";
+                if (navStoreBtn) navStoreBtn.className = "hover:text-brand-600 transition-colors";
+                if (searchWrap) searchWrap.classList.add('hidden');
+                
+                initCharts();
+                updateSalesComparison();
+                renderDetailedSalesReport();
+                renderCategoryAMonitor();
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Shopping Cart System with B & C Strategy Integration
+        function addToCart(productId, customConfig = null) {
+            const product = products.find(p => p.id === productId);
+            if (!product) return;
+            
+            let finalPrice = customConfig ? customConfig.finalPrice : product.price;
+            let configText = customConfig ? customConfig.summary : "標準原廠規格";
+            let giftNotice = "";
+
+            // B 類經營策略：升級記憶體/硬碟/保固時結帳打 95 折 (極大化毛利)
+            let isDiscounted = false;
+            if (product.strategyTier === 'B' && customConfig && (customConfig.ram > 0 || customConfig.storage > 0 || customConfig.warranty > 0)) {
+                finalPrice = Math.round(finalPrice * 0.95);
+                configText += " (享 B 類選配升級 95 折優惠！)";
+                isDiscounted = true;
+            }
+
+            // C 類經營策略：購買即送週邊 (加速變現)
+            if (product.strategyTier === 'C') {
+                giftNotice = "🎁 隨貨贈送：精選電競/商務滑鼠 + 鍵盤週邊禮包";
+            }
+
+            // A 類庫存扣減模擬 (確保不斷貨)
+            if (product.strategyTier === 'A' && product.stock > 0) {
+                product.stock -= 1;
+                renderProducts(products);
+                renderCategoryAMonitor();
+            }
+            
+            const existingItem = cart.find(item => item.id === productId && item.config === configText);
+            
+            if (existingItem) {
+                existingItem.count += 1;
+            } else {
+                cart.push({
+                    cartId: Date.now() + Math.random(),
+                    id: product.id,
+                    name: product.name,
+                    price: finalPrice,
+                    originalPrice: customConfig ? customConfig.finalPrice : product.price,
+                    image: product.image,
+                    config: configText,
+                    giftNotice: giftNotice,
+                    strategyTier: product.strategyTier,
+                    isDiscounted: isDiscounted,
+                    count: 1
+                });
+            }
+            updateCartBadge();
+            let toastMsg = product.name + " 已成功加入購物車！";
+            if (isDiscounted) toastMsg += " 已套用 95 折折扣！";
+            if (giftNotice) toastMsg += " 已加入免費筆電週邊！";
+            showToast("已加入購物車", toastMsg);
+        }
+
+        function updateCartBadge() {
+            const badge = document.getElementById('cart-count');
+            if (!badge) return;
+            const totalCount = cart.reduce((sum, item) => sum + item.count, 0);
+            badge.textContent = totalCount;
+            if (totalCount > 0) badge.classList.remove('hidden');
+            else badge.classList.add('hidden');
+        }
+
+        function toggleCartDrawer() {
+            let drawer = document.getElementById('cart-drawer');
+            if (!drawer) {
+                drawer = document.createElement('div');
+                drawer.id = 'cart-drawer';
+                drawer.className = "fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex justify-end";
+                document.body.appendChild(drawer);
+            } else {
+                drawer.remove();
+                return;
+            }
+            
+            const totalPrice = cart.reduce((sum, item) => sum + (item.price * item.count), 0);
+            let itemsHtml = '';
+            
+            if (cart.length === 0) {
+                itemsHtml = '<div class="text-center py-20 text-slate-400"><i class="fa-solid fa-cart-arrow-down text-4xl mb-3"></i><p class="text-sm font-semibold">購物車目前是空的</p></div>';
+            } else {
+                cart.forEach((item, idx) => {
+                    itemsHtml += '<div class="flex items-center gap-4 bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 relative overflow-hidden">';
+                    itemsHtml += '<img src="' + item.image + '" class="w-16 h-16 object-cover rounded-xl border border-slate-200">';
+                    itemsHtml += '<div class="flex-1"><h4 class="font-bold text-slate-900 text-sm">' + item.name + '</h4>';
+                    itemsHtml += '<p class="text-[11px] text-slate-500">' + item.config + '</p>';
+                    
+                    if (item.giftNotice) {
+                        itemsHtml += '<p class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded mt-1 inline-block">' + item.giftNotice + '</p>';
+                    }
+                    if (item.isDiscounted) {
+                        itemsHtml += '<div class="text-xs text-rose-500 font-bold mt-1">已打 95 折 (原單價: NT$ ' + item.originalPrice.toLocaleString() + ')</div>';
+                    }
+
+                    itemsHtml += '<div class="text-brand-600 font-extrabold text-sm mt-1">NT$ ' + (item.price * item.count).toLocaleString() + '</div></div>';
+                    itemsHtml += '<div class="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl px-2 py-1">';
+                    itemsHtml += '<button onclick="updateCartQuantity(' + idx + ', -1)" class="text-slate-500 hover:text-slate-800 text-xs px-1 font-bold">-</button>';
+                    itemsHtml += '<span class="text-xs font-extrabold text-slate-800 w-4 text-center">' + item.count + '</span>';
+                    itemsHtml += '<button onclick="updateCartQuantity(' + idx + ', 1)" class="text-slate-500 hover:text-slate-800 text-xs px-1 font-bold">+</button></div>';
+                    itemsHtml += '<button onclick="removeFromCart(' + idx + ')" class="text-slate-400 hover:text-rose-500 p-1.5"><i class="fa-solid fa-trash-can text-sm"></i></button></div>';
+                });
+            }
+
+            let drawerHtml = '<div class="bg-white w-full max-w-md h-full shadow-2xl flex flex-col p-6 transition-all duration-300">';
+            drawerHtml += '<div class="flex items-center justify-between pb-4 border-b border-slate-200"><div class="flex items-center gap-2">';
+            drawerHtml += '<i class="fa-solid fa-cart-shopping text-brand-600 text-lg"></i><h3 class="font-extrabold text-lg text-slate-900">您的購物車</h3></div>';
+            drawerHtml += '<button onclick="toggleCartDrawer()" class="w-9 h-9 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center text-slate-700"><i class="fa-solid fa-xmark"></i></button></div>';
+            drawerHtml += '<div class="flex-1 overflow-y-auto py-4 space-y-4">' + itemsHtml + '</div>';
+            drawerHtml += '<div class="pt-4 border-t border-slate-200 space-y-3"><div class="flex items-center justify-between text-sm">';
+            drawerHtml += '<span class="text-slate-500 font-medium">應付總金額</span><span class="text-xl font-extrabold text-slate-900">NT$ ' + totalPrice.toLocaleString() + '</span></div>';
+            drawerHtml += '<button onclick="openCheckoutModal()" ' + (cart.length === 0 ? 'disabled' : '') + ' class="w-full bg-brand-600 hover:bg-brand-500 disabled:bg-slate-300 text-white font-bold py-3.5 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2">前往結帳付款 <i class="fa-solid fa-arrow-right"></i></button></div></div>';
+            
+            drawer.innerHTML = drawerHtml;
+        }
+
+        function updateCartQuantity(index, change) {
+            if (cart[index]) {
+                cart[index].count += change;
+                if (cart[index].count <= 0) {
+                    cart.splice(index, 1);
+                }
+            }
+            updateCartBadge();
+            toggleCartDrawer();
+            toggleCartDrawer();
+        }
+
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            updateCartBadge();
+            toggleCartDrawer();
+            toggleCartDrawer();
+        }
+
+        // Checkout & Order Placement
+        function openCheckoutModal() {
+            toggleCartDrawer();
+            let modal = document.getElementById('checkout-modal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'checkout-modal';
+                modal.className = "fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto";
+                document.body.appendChild(modal);
+            }
+            const total = cart.reduce((sum, item) => sum + (item.price * item.count), 0);
+            
+            let modalHtml = '<div class="bg-white rounded-3xl max-w-xl w-full p-6 md:p-8 shadow-2xl space-y-6">';
+            modalHtml += '<div class="flex items-center justify-between pb-4 border-b border-slate-200"><div>';
+            modalHtml += '<span class="text-xs font-bold text-brand-600 uppercase tracking-widest">Secure Checkout</span>';
+            modalHtml += '<h3 class="text-2xl font-extrabold text-slate-900 mt-0.5">填寫訂單與付款資訊</h3></div>';
+            modalHtml += '<button onclick="document.getElementById(\'checkout-modal\').remove()" class="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-700 hover:bg-slate-200"><i class="fa-solid fa-xmark"></i></button></div>';
+            modalHtml += '<form onsubmit="submitOrder(event)" class="space-y-4">';
+            modalHtml += '<div><label class="block text-xs font-semibold text-slate-700 mb-1">收件人姓名</label><input type="text" required placeholder="例如：陳大文" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-brand-500 font-semibold"></div>';
+            modalHtml += '<div class="grid grid-cols-1 sm:grid-cols-2 gap-4"><div><label class="block text-xs font-semibold text-slate-700 mb-1">聯絡電話</label><input type="tel" id="checkout-phone" required placeholder="0912345678" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-brand-500 font-semibold"></div>';
+            modalHtml += '<div><label class="block text-xs font-semibold text-slate-700 mb-1">電子信箱</label><input type="email" required placeholder="user@example.com" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-brand-500 font-semibold"></div></div>';
+            modalHtml += '<div><label class="block text-xs font-semibold text-slate-700 mb-1">寄送地址</label><input type="text" required placeholder="台北市信義區信義路..." class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-brand-500 font-semibold"></div>';
+            modalHtml += '<div><label class="block text-xs font-semibold text-slate-700 mb-1">付款方式</label><select class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-brand-500 font-semibold"><option>信用卡一次付清 (享 12 期 0 利率)</option><option>Apple Pay / Google Pay</option><option>超商取貨付款</option><option>ATM 轉帳匯款</option></select></div>';
+            modalHtml += '<div class="bg-slate-50 p-4 rounded-2xl flex items-center justify-between border border-slate-200"><span class="text-xs font-semibold text-slate-600">應付總金額：</span><span class="text-xl font-extrabold text-emerald-600">NT$ ' + total.toLocaleString() + '</span></div>';
+            modalHtml += '<button type="submit" class="w-full bg-brand-600 hover:bg-brand-500 text-white font-bold py-3.5 rounded-2xl shadow-lg transition-all text-xs">確認送出訂單並付款</button></form></div>';
+            
+            modal.innerHTML = modalHtml;
+        }
+
+        function submitOrder(e) {
+            e.preventDefault();
+            const orderId = "TV-" + Math.floor(100000 + Math.random() * 900000);
+            const phoneInput = document.getElementById('checkout-phone');
+            const phone = phoneInput ? phoneInput.value : "0912345678";
+            
+            const modal = document.getElementById('checkout-modal');
+            if (modal) modal.remove();
+            
+            const orderRecord = {
+                orderId: orderId,
+                phone: phone,
+                date: new Date().toLocaleString(),
+                items: [...cart],
+                total: cart.reduce((s, i) => s + (i.price * i.count), 0),
+                status: "已付款 / 處理中"
+            };
+            savedOrders.unshift(orderRecord);
+            cart = [];
+            updateCartBadge();
+            openReceiptModal(orderRecord);
+        }
+
+        function openReceiptModal(order) {
+            let modal = document.getElementById('receipt-modal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'receipt-modal';
+                modal.className = "fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto";
+                document.body.appendChild(modal);
+            }
+            
+            let itemsListHtml = '';
+            order.items.forEach(i => {
+                itemsListHtml += '<div class="border-b border-slate-100 pb-2"><div class="flex justify-between text-xs"><span class="font-medium text-slate-800">' + i.name + ' <span class="text-slate-400">(' + i.config + ') x' + (i.count || 1) + '</span></span><span class="font-bold text-slate-900">NT$ ' + ((i.price) * (i.count || 1)).toLocaleString() + '</span></div>';
+                if (i.giftNotice) {
+                    itemsListHtml += '<div class="text-[10px] text-emerald-600 font-bold mt-0.5">' + i.giftNotice + '</div>';
+                }
+                itemsListHtml += '</div>';
+            });
+
+            let modalHtml = '<div class="bg-white rounded-3xl max-w-lg w-full p-6 md:p-8 shadow-2xl space-y-6" id="printable-receipt">';
+            modalHtml += '<div class="text-center space-y-2"><div class="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-2xl mx-auto shadow-inner"><i class="fa-solid fa-check"></i></div>';
+            modalHtml += '<h3 class="text-2xl font-extrabold text-slate-900">Lapzone 購買單據</h3><p class="text-xs text-slate-500">感謝您的購買！您的訂單與購買明細如下：</p></div>';
+            modalHtml += '<div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-3"><div class="flex justify-between text-xs font-semibold text-slate-500 border-b border-slate-200 pb-2"><span>訂單編號: <strong class="text-slate-800">' + order.orderId + '</strong></span><span>' + order.date + '</span></div>';
+            modalHtml += '<div class="space-y-2 max-h-48 overflow-y-auto">' + itemsListHtml + '</div>';
+            modalHtml += '<div class="flex justify-between text-sm font-extrabold text-slate-900 border-t border-slate-200 pt-3"><span>總計付費金額</span><span class="text-brand-600">NT$ ' + order.total.toLocaleString() + '</span></div></div>';
+            modalHtml += '<div class="flex gap-3"><button onclick="window.print()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-3 rounded-xl text-xs transition-all flex items-center justify-center gap-1"><i class="fa-solid fa-print"></i> 列印單據 / PDF</button>';
+            modalHtml += '<button onclick="document.getElementById(\'receipt-modal\').remove()" class="flex-1 bg-brand-600 hover:bg-brand-500 text-white font-semibold py-3 rounded-xl text-xs shadow-md transition-all">返回商城</button></div></div>';
+            
+            modal.innerHTML = modalHtml;
+        }
+
+        // Custom PC Builder Modal & Strategy Discount Logic (B Tier 95折 - 最大化毛利)
+        function openConfiguratorModal(productId) {
+            currentConfigProduct = products.find(p => p.id === productId);
+            if (!currentConfigProduct) return;
+            const modal = document.getElementById('configurator-modal');
+            if (modal) modal.classList.remove('hidden');
+            configState = { ram: 0, storage: 0, warranty: 0 };
+            updateConfiguratorUI();
+        }
+
+        function closeConfiguratorModal() {
+            const modal = document.getElementById('configurator-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function updateConfiguratorUI() {
+            const p = currentConfigProduct;
+            if (!p) return;
+            let originalTotalPrice = p.price + configState.ram + configState.storage + configState.warranty;
+            let isTierBEligible = (p.strategyTier === 'B' && (configState.ram > 0 || configState.storage > 0 || configState.warranty > 0));
+            let finalPrice = isTierBEligible ? Math.round(originalTotalPrice * 0.95) : originalTotalPrice;
+
+            const container = document.getElementById('configurator-content');
+            if (!container) return;
+            
+            let html = '<div class="space-y-5"><div class="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200">';
+            html += '<img src="' + p.image + '" class="w-20 h-20 object-cover rounded-xl border border-slate-200">';
+            html += '<div><div class="flex items-center gap-2"><h4 class="font-bold text-slate-900 text-base">' + p.name + '</h4>';
+            if (p.strategyTier === 'B') {
+                html += '<span class="bg-indigo-100 text-indigo-800 text-[10px] font-extrabold px-2 py-0.5 rounded">B 類選配升級專屬</span>';
+            }
+            html += '</div><p class="text-xs text-slate-500 mt-0.5">預設原廠價格：NT$ ' + p.price.toLocaleString() + '</p></div></div>';
+            
+            if (p.strategyTier === 'B') {
+                html += '<div class="bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-200 text-indigo-800 p-3 rounded-2xl text-xs font-semibold flex items-center gap-2"><i class="fa-solid fa-gift text-indigo-600 text-base"></i> <span>【B 類行銷優惠】選購升級任一高毛利組件（記憶體、硬碟或保固），整台筆電立刻享 <strong class="text-rose-600">95 折優惠</strong>！</span></div>';
+            }
+
+            html += '<div><label class="block text-xs font-bold text-slate-700 mb-1.5"><i class="fa-solid fa-microchip text-brand-600 mr-1"></i> 記憶體規格升級</label>';
+            html += '<select onchange="configState.ram = parseInt(this.value); updateConfiguratorUI();" class="w-full bg-slate-50 border border-slate-300 text-slate-700 text-xs rounded-xl px-3.5 py-2.5 font-semibold focus:outline-none focus:border-brand-500">';
+            html += '<option value="0" ' + (configState.ram===0?'selected':'') + '>標準記憶體 (原廠配置)</option>';
+            html += '<option value="3500" ' + (configState.ram===3500?'selected':'') + '>升級 32GB High-Speed RAM (+NT$ 3,500)</option>';
+            html += '<option value="8000" ' + (configState.ram===8000?'selected':'') + '>升級 64GB 創作者極致規格 (+NT$ 8,000)</option></select></div>';
+            
+            html += '<div><label class="block text-xs font-bold text-slate-700 mb-1.5"><i class="fa-solid fa-hard-drive text-brand-600 mr-1"></i> 高速 SSD 硬碟容量</label>';
+            html += '<select onchange="configState.storage = parseInt(this.value); updateConfiguratorUI();" class="w-full bg-slate-50 border border-slate-300 text-slate-700 text-xs rounded-xl px-3.5 py-2.5 font-semibold focus:outline-none focus:border-brand-500">';
+            html += '<option value="0" ' + (configState.storage===0?'selected':'') + '>標準 512GB PCIe 4.0 SSD</option>';
+            html += '<option value="2500" ' + (configState.storage===2500?'selected':'') + '>升級 1TB 高速 SSD (+NT$ 2,500)</option>';
+            html += '<option value="6000" ' + (configState.storage===6000?'selected':'') + '>升級 2TB 旗艦級 SSD (+NT$ 6,000)</option></select></div>';
+            
+            html += '<div><label class="block text-xs font-bold text-slate-700 mb-1.5"><i class="fa-solid fa-shield-halved text-brand-600 mr-1"></i> 延長保固與意外保障</label>';
+            html += '<select onchange="configState.warranty = parseInt(this.value); updateConfiguratorUI();" class="w-full bg-slate-50 border border-slate-300 text-slate-700 text-xs rounded-xl px-3.5 py-2.5 font-semibold focus:outline-none focus:border-brand-500">';
+            html += '<option value="0" ' + (configState.warranty===0?'selected':'') + '>標準 2 年原廠保固</option>';
+            html += '<option value="2000" ' + (configState.warranty===2000?'selected':'') + '>延長至 3 年全方位保固 (+NT$ 2,000)</option>';
+            html += '<option value="4500" ' + (configState.warranty===4500?'selected':'') + '>3 年全包完美保固 (含撞擊摔落意外) (+NT$ 4,500)</option></select></div>';
+            
+            html += '<div class="bg-indigo-50/80 p-4 rounded-2xl flex items-center justify-between border border-indigo-100"><div>';
+            html += '<span class="text-xs text-indigo-600 font-bold uppercase tracking-wider">選配估價小計</span>';
+            if (isTierBEligible) {
+                html += '<div class="text-[11px] text-slate-400 line-through">NT$ ' + originalTotalPrice.toLocaleString() + '</div>';
+                html += '<div class="text-2xl font-extrabold text-rose-600">NT$ ' + finalPrice.toLocaleString() + ' <span class="text-xs font-bold text-rose-500 bg-rose-100 px-2 py-0.5 rounded">打 95 折！</span></div>';
+            } else {
+                html += '<div class="text-2xl font-extrabold text-indigo-900">NT$ ' + finalPrice.toLocaleString() + '</div>';
+            }
+            html += '</div>';
+            html += '<button onclick="addCustomConfigToCart(' + finalPrice + ')" class="bg-brand-600 hover:bg-brand-500 text-white px-5 py-3 rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-1.5"><i class="fa-solid fa-cart-plus"></i> 加入購物車</button></div></div>';
+            
+            container.innerHTML = html;
+        }
+
+        function addCustomConfigToCart(finalPrice) {
+            const p = currentConfigProduct;
+            if (!p) return;
+            const summaryStr = '客製選配 (RAM:+' + configState.ram + ', SSD:+' + configState.storage + ', 保固:+' + configState.warranty + ')';
+            addToCart(p.id, { 
+                finalPrice: finalPrice, 
+                summary: summaryStr,
+                ram: configState.ram,
+                storage: configState.storage,
+                warranty: configState.warranty
+            });
+            closeConfiguratorModal();
+        }
+
+        // Category A Real-time Monitoring & Restock Functions (確保不斷貨)
+        function renderCategoryAMonitor() {
+            const container = document.getElementById('category-a-monitor-grid');
+            if (!container) return;
+            const aProducts = products.filter(p => p.strategyTier === 'A');
+            container.innerHTML = '';
+
+            aProducts.forEach(p => {
+                const card = document.createElement('div');
+                const isTight = p.stock < 10;
+                card.className = "p-4 rounded-2xl border transition-all flex flex-col justify-between " + (isTight ? "bg-rose-50/80 border-rose-200" : "bg-emerald-50/80 border-emerald-200");
+                
+                let html = '<div><div class="flex justify-between items-start mb-2">';
+                html += '<h4 class="font-extrabold text-slate-900 text-xs">' + p.name + '</h4>';
+                html += '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full ' + (isTight ? "bg-rose-500 text-white" : "bg-emerald-600 text-white") + '">' + (isTight ? "⚡ 庫存緊張" : "🔥 庫存充足") + '</span></div>';
+                html += '<p class="text-[11px] text-slate-600">當前即時庫存：<strong class="text-sm font-extrabold ' + (isTight ? "text-rose-600" : "text-emerald-700") + '">' + p.stock + ' 台</strong></p>';
+                html += '<p class="text-[10px] text-slate-400 mt-1">前端標籤：' + (isTight ? '⚡ 庫存緊張 (熱銷剩 ' + p.stock + ' 台)' : '🔥 現貨供應・24hr 快速出貨') + '</p></div>';
+                
+                html += '<div class="mt-3 pt-2 border-t border-slate-200/60">';
+                if (isTight) {
+                    html += '<button onclick="restockItemA(' + p.id + ')" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-2 rounded-xl text-xs shadow-md transition-all flex items-center justify-center gap-1"><i class="fa-solid fa-truck-ramp-box"></i> 一鍵補貨 (+20台)</button>';
+                } else {
+                    html += '<button onclick="restockItemA(' + p.id + ')" class="w-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2 rounded-xl text-xs transition-all flex items-center justify-center gap-1"><i class="fa-solid fa-plus"></i> 手動補充庫存</button>';
+                }
+                html += '</div>';
+
+                card.innerHTML = html;
+                container.appendChild(card);
+            });
+        }
+
+        function restockItemA(productId) {
+            const p = products.find(item => item.id === productId);
+            if (!p) return;
+            p.stock += 20;
+            renderProducts(products);
+            renderCategoryAMonitor();
+            renderDetailedSalesReport();
+            showToast("一鍵補貨成功", p.name + " 已成功補充庫存 20 台！當前庫存：" + p.stock + " 台");
+        }
+
+        function restockItem10(productId) {
+            const p = products.find(item => item.id === productId);
+            if (!p) return;
+            p.stock += 10;
+            renderProducts(products);
+            renderCategoryAMonitor();
+            renderDetailedSalesReport();
+            showToast("補貨成功", p.name + " 已成功補充庫存 10 台！當前庫存：" + p.stock + " 台");
+        }
+
+        function batchRestockCategoryA() {
+            products.filter(p => p.strategyTier === 'A').forEach(p => {
+                p.stock += 20;
+            });
+            renderProducts(products);
+            renderCategoryAMonitor();
+            renderDetailedSalesReport();
+            showToast("全量一鍵補貨", "已成功為所有 A 類主力品項補充 20 台安全庫存！");
+        }
+
+        // Wishlist & Comparison Drawer Logic
+        function toggleWishlist(productId) {
+            const idx = wishlist.indexOf(productId);
+            if (idx > -1) {
+                wishlist.splice(idx, 1);
+                showToast("取消收藏", "商品已從願望清單移除");
+            } else {
+                wishlist.push(productId);
+                showToast("加入收藏", "商品已成功加入願望清單！");
+            }
+            updateWishlistBadge();
+            renderProducts(products);
+        }
+
+        function updateWishlistBadge() {
+            const badge = document.getElementById('wishlist-count');
+            if (!badge) return;
+            badge.textContent = wishlist.length;
+            if (wishlist.length > 0) badge.classList.remove('hidden');
+            else badge.classList.add('hidden');
+        }
+
+        function toggleWishlistDrawer() {
+            let drawer = document.getElementById('wishlist-drawer');
+            if (!drawer) {
+                drawer = document.createElement('div');
+                drawer.id = 'wishlist-drawer';
+                drawer.className = "fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex justify-end";
+                document.body.appendChild(drawer);
+            } else {
+                drawer.remove();
+                return;
+            }
+            
+            const wishItems = products.filter(p => wishlist.includes(p.id));
+            let itemsHtml = '';
+            
+            if (wishItems.length === 0) {
+                itemsHtml = '<div class="text-center py-20 text-slate-400"><i class="fa-solid fa-heart-crack text-4xl mb-3"></i><p class="text-sm font-semibold">目前沒有收藏任何筆電</p></div>';
+            } else {
+                wishItems.forEach(item => {
+                    itemsHtml += '<div class="flex items-center gap-4 bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">';
+                    itemsHtml += '<img src="' + item.image + '" class="w-16 h-16 object-cover rounded-xl border border-slate-200">';
+                    itemsHtml += '<div class="flex-1"><h4 class="font-bold text-slate-900 text-sm">' + item.name + '</h4>';
+                    itemsHtml += '<div class="text-brand-600 font-extrabold text-sm mt-1">NT$ ' + item.price.toLocaleString() + '</div></div>';
+                    itemsHtml += '<button onclick="addToCart(' + item.id + '); toggleWishlistDrawer();" class="bg-brand-600 text-white p-2.5 rounded-xl text-xs"><i class="fa-solid fa-cart-plus"></i></button></div>';
+                });
+            }
+
+            let drawerHtml = '<div class="bg-white w-full max-w-md h-full shadow-2xl flex flex-col p-6 transition-all duration-300">';
+            drawerHtml += '<div class="flex items-center justify-between pb-4 border-b border-slate-200"><div class="flex items-center gap-2">';
+            drawerHtml += '<i class="fa-solid fa-heart text-rose-500 text-lg"></i><h3 class="font-extrabold text-lg text-slate-900">收藏願望清單</h3></div>';
+            drawerHtml += '<button onclick="toggleWishlistDrawer()" class="w-9 h-9 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center text-slate-700"><i class="fa-solid fa-xmark"></i></button></div>';
+            drawerHtml += '<div class="flex-1 overflow-y-auto py-4 space-y-4">' + itemsHtml + '</div></div>';
+            
+            drawer.innerHTML = drawerHtml;
+        }
+
+        // Product Details Modal
+        function openProductModal(productId) {
+            const p = products.find(item => item.id === productId);
+            if (!p) return;
+            const modal = document.getElementById('product-modal');
+            if (modal) modal.classList.remove('hidden');
+            const content = document.getElementById('modal-content');
+            if (!content) return;
+            
+            let modalHtml = '<div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">';
+            modalHtml += '<img src="' + p.image + '" class="rounded-2xl object-cover w-full h-80 border border-slate-200 shadow-md">';
+            modalHtml += '<div class="space-y-4"><span class="bg-brand-50 text-brand-600 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">' + p.brand + ' 旗艦系列</span>';
+            modalHtml += '<h2 class="text-2xl font-extrabold text-slate-900">' + p.name + '</h2>';
+            modalHtml += '<div class="flex items-center gap-2 text-amber-500 text-sm font-bold"><i class="fa-solid fa-star"></i> <span>' + p.rating + '</span><span class="text-slate-400 font-normal">(' + p.reviewsCount + ' 則真實評價)</span></div>';
+            modalHtml += '<div class="text-3xl font-extrabold text-slate-900">NT$ ' + p.price.toLocaleString() + ' <span class="text-sm font-normal text-slate-400 line-through">NT$ ' + p.originalPrice.toLocaleString() + '</span></div>';
+            
+            if (p.strategyTier === 'A') {
+                modalHtml += '<div class="bg-amber-50 border border-amber-200 text-amber-900 p-3 rounded-xl text-xs font-bold"><i class="fa-solid fa-fire text-amber-600 mr-1"></i> A 類策略 (衝刺規模)：現貨庫存剩餘 ' + p.stock + ' 台，下單即享 24hr 速出保障。</div>';
+            } else if (p.strategyTier === 'B') {
+                modalHtml += '<div class="bg-indigo-50 border border-indigo-200 text-indigo-900 p-3 rounded-xl text-xs font-bold"><i class="fa-solid fa-tags text-indigo-600 mr-1"></i> B 類策略 (極大化毛利)：升級記憶體/硬碟/保固，全機直接打 95 折！</div>';
+            } else if (p.strategyTier === 'C') {
+                modalHtml += '<div class="bg-emerald-50 border border-emerald-200 text-emerald-900 p-3 rounded-xl text-xs font-bold"><i class="fa-solid fa-gift text-emerald-600 mr-1"></i> C 類策略 (加速變現)：下單即贈「精選電競/商務滑鼠 + 鍵盤」週邊豪華組。</div>';
+            }
+
+            modalHtml += '<p class="text-slate-600 text-xs leading-relaxed">搭載頂級處理器與高算力 NPU/GPU 晶片，結合輕薄機身與極速 AI 算力，輕鬆滿足 Copilot+ 生成式體驗、專業繪圖與商務娛樂。</p>';
+            modalHtml += '<div class="border-t border-slate-200 pt-4 space-y-2 text-xs"><div class="grid grid-cols-2 gap-2 text-slate-600">';
+            modalHtml += '<div><strong>處理器：</strong> ' + p.specs.cpu + '</div>';
+            modalHtml += '<div><strong>顯卡/NPU：</strong> ' + p.specs.gpu + '</div>';
+            modalHtml += '<div><strong>記憶體：</strong> ' + p.specs.ram + '</div>';
+            modalHtml += '<div><strong>儲存：</strong> ' + p.specs.storage + '</div>';
+            modalHtml += '<div><strong>重量：</strong> ' + p.specs.weight + '</div>';
+            modalHtml += '<div><strong>續航：</strong> ' + p.specs.battery + '</div></div></div>';
+            modalHtml += '<div class="flex gap-3 pt-2">';
+            modalHtml += '<button onclick="openConfiguratorModal(' + p.id + '); closeProductModal();" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl text-xs transition-all flex items-center justify-center gap-1.5"><i class="fa-solid fa-sliders"></i> 客製選配</button>';
+            modalHtml += '<button onclick="addToCart(' + p.id + '); closeProductModal();" class="flex-1 bg-brand-600 hover:bg-brand-500 text-white font-bold py-3 rounded-xl text-xs shadow-lg shadow-brand-500/20 transition-all flex items-center justify-center gap-1.5"><i class="fa-solid fa-cart-plus"></i> 加入購物車</button></div></div></div>';
+            
+            content.innerHTML = modalHtml;
+        }
+
+        function closeProductModal() {
+            const modal = document.getElementById('product-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        // Quiz Wizard & Strictly Enforced Cross-Filtering Logic
+        function openQuizModal() {
+            const modal = document.getElementById('quiz-modal');
+            if (modal) modal.classList.remove('hidden');
+        }
+        function closeQuizModal() {
+            const modal = document.getElementById('quiz-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function submitQuiz() {
+            closeQuizModal();
+            const use = document.getElementById('quiz-use').value;
+            const budget = document.getElementById('quiz-budget').value;
+            const brand = document.getElementById('quiz-brand').value;
+            const weight = document.getElementById('quiz-weight').value;
+
+            let eligibleProducts = products.filter(p => {
+                if (p.category !== use) return false;
+                if (budget === 'under40k' && p.price > 40000) return false;
+                if (budget === '40kto60k' && (p.price < 40000 || p.price > 60000)) return false;
+                if (budget === 'above60k' && p.price < 60000) return false;
+                if (brand !== 'any' && p.brand !== brand) return false;
+                if (weight === 'ultra-light') {
+                    const weightVal = parseFloat(p.specs.weight);
+                    if (isNaN(weightVal) || weightVal >= 1.3) return false;
+                } else if (weight === 'large-screen') {
+                    const isLarge = p.name.includes("15") || p.name.includes("16") || p.name.includes("18") || p.specs.weight.includes("1.5") || p.specs.weight.includes("2.");
+                    if (!isLarge) return false;
+                } else if (weight === 'performance-heavy') {
+                    if (p.category !== 'gaming' && p.category !== 'creator') return false;
+                }
+                return true;
+            });
+
+            if (eligibleProducts.length === 0) {
+                aiRecommendedProducts = [];
+                const activeBadge = document.getElementById('ai-active-badge');
+                if (activeBadge) activeBadge.classList.remove('hidden');
+                switchView('store');
+                applyFilters();
+                showToast("無對應商品", "沒有商品同時符合選定的用途、預算、品牌與重量條件！", "warning");
+                return;
+            }
+
+            const scoredProducts = eligibleProducts.map(p => {
+                let score = 75;
+                let matchReasons = [];
+                matchReasons.push(`專屬用途：${getCategoryLabel(p.category)}`);
+                if (brand !== 'any') matchReasons.push(`品牌：${brand}`);
+                if (budget === 'under40k') { matchReasons.push("預算 <= 4萬"); score += 15; }
+                else if (budget === '40kto60k') { matchReasons.push("主流預算 (4~6萬)"); score += 10; }
+                else if (budget === 'above60k') { matchReasons.push("旗艦預算 (>6萬)"); score += 15; }
+
+                let matchRate = Math.min(99, Math.max(80, Math.round(score)));
+                let primaryReason = matchReasons.join(' | ');
+
+                return {
+                    ...p,
+                    aiScore: score,
+                    aiMatchRate: matchRate,
+                    aiReason: primaryReason
+                };
+            });
+
+            scoredProducts.sort((a, b) => b.aiScore - a.aiScore);
+            aiRecommendedProducts = scoredProducts;
+
+            const activeBadge = document.getElementById('ai-active-badge');
+            if (activeBadge) activeBadge.classList.remove('hidden');
+
+            switchView('store');
+            applyFilters();
+            showToast("交叉篩選完成", `已為您精準篩選出 ${aiRecommendedProducts.length} 款符合所有條件的筆電！`);
+            const productsEl = document.getElementById('products');
+            if (productsEl) productsEl.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function getCategoryLabel(cat) {
+            switch(cat) {
+                case 'aipc': return 'Copilot+ AIPC';
+                case 'ultrabook': return '輕薄文書';
+                case 'gaming': return '極速電競';
+                case 'creator': return '創作者繪圖';
+                case 'business': return '商務辦公';
+                default: return '綜合規格';
+            }
+        }
+
+        function openGuideModal() {
+            const modal = document.getElementById('guide-modal');
+            if (modal) modal.classList.remove('hidden');
+        }
+        function closeGuideModal() {
+            const modal = document.getElementById('guide-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            if (menu) menu.classList.toggle('hidden');
+        }
+
+        function openProfileModal() {
+            const modal = document.getElementById('profile-modal');
+            if (modal) modal.classList.remove('hidden');
+        }
+        function closeProfileModal() {
+            const modal = document.getElementById('profile-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        // Order Lookup Modal Functions
+        function openOrderLookupModal() {
+            const modal = document.getElementById('order-lookup-modal');
+            if (modal) modal.classList.remove('hidden');
+        }
+        function closeOrderLookupModal() {
+            const modal = document.getElementById('order-lookup-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+        function searchOrders() {
+            const input = document.getElementById('lookup-input');
+            const resultsContainer = document.getElementById('order-lookup-results');
+            if (!input || !resultsContainer) return;
+            const query = input.value.trim().toLowerCase();
+            if (!query) {
+                showToast("提示", "請輸入訂單編號或聯絡電話", "warning");
+                return;
+            }
+            const matchedOrders = savedOrders.filter(o => 
+                o.orderId.toLowerCase().includes(query) || o.phone.includes(query)
+            );
+            if (matchedOrders.length === 0) {
+                resultsContainer.innerHTML = '<div class="text-center py-6 text-slate-400 bg-slate-50 rounded-2xl border border-slate-200"><i class="fa-solid fa-receipt text-3xl mb-2"></i><p class="text-xs font-bold text-slate-600">查無對應的訂單紀錄</p><p class="text-[11px] text-slate-400 mt-0.5">請確認輸入的訂單號 (如 TV-849201) 或電話號碼是否正確。</p></div>';
+                return;
+            }
+            
+            let html = '';
+            matchedOrders.forEach(order => {
+                let itemsListHtml = '';
+                order.items.forEach(i => {
+                    itemsListHtml += '<div class="flex justify-between"><span>' + i.name + ' (' + i.config + ') x' + (i.count || 1) + '</span><span class="font-bold text-slate-800">NT$ ' + ((i.price) * (i.count || 1)).toLocaleString() + '</span></div>';
+                });
+                
+                html += '<div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3 mb-3"><div class="flex items-center justify-between text-xs pb-2 border-b border-slate-200">';
+                html += '<span class="font-extrabold text-slate-900">' + order.orderId + '</span><span class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-md">' + order.status + '</span></div>';
+                html += '<div class="space-y-1.5 text-xs text-slate-600">' + itemsListHtml + '</div>';
+                html += '<div class="flex justify-between items-center pt-2 border-t border-slate-200 text-xs font-bold"><span class="text-slate-500">訂單總金額</span><span class="text-brand-600 text-sm">NT$ ' + order.total.toLocaleString() + '</span></div>';
+                html += '<button onclick="closeOrderLookupModal(); openReceiptModal(savedOrders.find(o => o.orderId===\'' + order.orderId + '\'))" class="w-full bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-bold py-2 rounded-xl text-xs transition-all flex items-center justify-center gap-1.5"><i class="fa-solid fa-file-invoice"></i> 查看與列印詳細單據</button></div>';
+            });
+            
+            resultsContainer.innerHTML = html;
+        }
+
+        // Product Comparison Logic
+        function toggleCompare(productId) {
+            const idx = compareList.findIndex(item => item.id === productId);
+            if (idx > -1) {
+                compareList.splice(idx, 1);
+                showToast("已移除比較", "已從規格比較清單移除");
+            } else {
+                if (compareList.length >= 3) {
+                    showToast("上限提醒", "最多可同時比較 3 款筆電", "warning");
+                    return;
+                }
+                const targetProduct = products.find(p => p.id === productId);
+                if (targetProduct) {
+                    compareList.push(targetProduct);
+                    showToast("加入成功", '已將 ' + targetProduct.name + ' 加入規格比較');
+                }
+            }
+            updateCompareBadge();
+            renderProducts(products);
+        }
+
+        function removeFromCompare(productId) {
+            const idx = compareList.findIndex(item => item.id === productId);
+            if (idx > -1) {
+                const removedItem = compareList[idx];
+                compareList.splice(idx, 1);
+                updateCompareBadge();
+                renderProducts(products);
+                showToast("已移除比較", '已將 ' + removedItem.name + ' 從規格比較清單移除');
+                if (compareList.length > 0) {
+                    openComparisonModal();
+                } else {
+                    const modal = document.getElementById('compare-modal');
+                    if (modal) modal.remove();
+                    showToast("提示", "規格比較清單已清空", "warning");
+                }
+            }
+        }
+
+        function updateCompareBadge() {
+            const badge = document.getElementById('compare-badge');
+            if (!badge) return;
+            badge.textContent = compareList.length;
+            if (compareList.length > 0) badge.classList.remove('hidden');
+            else badge.classList.add('hidden');
+        }
+
+        function openComparisonModal() {
+            if (compareList.length === 0) {
+                showToast("提示", "請先點選筆電卡片下方的「加入規格比較」按鈕！", "warning");
+                return;
+            }
+            let modal = document.getElementById('compare-modal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'compare-modal';
+                modal.className = "fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto";
+                document.body.appendChild(modal);
+            }
+            
+            let headersHtml = '', catHtml = '', strategyHtml = '', cpuHtml = '', gpuHtml = '', ramHtml = '', storageHtml = '', weightHtml = '', actionHtml = '';
+
+            compareList.forEach(item => {
+                headersHtml += '<th class="p-3 text-center relative group"><button onclick="removeFromCompare(' + item.id + ')" class="absolute top-1 right-1 w-6 h-6 bg-rose-100 hover:bg-rose-500 text-rose-600 hover:text-white rounded-full flex items-center justify-center transition-all text-xs" title="從比較清單移除"><i class="fa-solid fa-xmark"></i></button><img src="' + item.image + '" class="w-20 h-20 object-cover rounded-xl mx-auto mb-2 border border-slate-200 shadow-sm"><div class="font-extrabold text-slate-900 text-sm line-clamp-1">' + item.name + '</div><div class="text-brand-600 font-bold mt-1">NT$ ' + item.price.toLocaleString() + '</div></th>';
+                catHtml += '<td class="p-3 text-center uppercase font-bold text-slate-700">' + item.category + '</td>';
+                strategyHtml += '<td class="p-3 text-center font-bold text-indigo-600">' + (item.strategyTier==='A'?'A類 (衝刺規模)':item.strategyTier==='B'?'B類 (極大化毛利)':'C類 (加速變現)') + '</td>';
+                cpuHtml += '<td class="p-3 text-center">' + item.specs.cpu + '</td>';
+                gpuHtml += '<td class="p-3 text-center">' + item.specs.gpu + '</td>';
+                ramHtml += '<td class="p-3 text-center">' + item.specs.ram + '</td>';
+                storageHtml += '<td class="p-3 text-center">' + item.specs.storage + '</td>';
+                weightHtml += '<td class="p-3 text-center">' + item.specs.weight + '</td>';
+                actionHtml += '<td class="p-3 text-center"><button onclick="document.getElementById(\'compare-modal\').remove(); addToCart(' + item.id + ');" class="bg-brand-600 hover:bg-brand-500 text-white font-bold px-3 py-1.5 rounded-lg text-xs shadow-sm transition-all">加入購物車</button></td>';
+            });
+
+            let modalHtml = '<div class="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6 md:p-8 shadow-2xl relative space-y-6">';
+            modalHtml += '<div class="flex items-center justify-between pb-4 border-b border-slate-200"><div><span class="text-xs font-bold text-brand-600 uppercase tracking-widest">Side-by-Side Specs</span><h3 class="text-2xl font-extrabold text-slate-900 mt-0.5">筆電詳細規格與經營優惠對比</h3></div>';
+            modalHtml += '<button onclick="document.getElementById(\'compare-modal\').remove()" class="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-700 hover:bg-slate-200"><i class="fa-solid fa-xmark"></i></button></div>';
+            modalHtml += '<div class="overflow-x-auto"><table class="w-full text-left border-collapse text-xs"><thead><tr class="border-b border-slate-200 bg-slate-50"><th class="p-3 font-bold text-slate-500 w-28">比較項目</th>' + headersHtml + '</tr></thead>';
+            modalHtml += '<tbody class="divide-y divide-slate-100">';
+            modalHtml += '<tr><td class="p-3 font-semibold text-slate-500 bg-slate-50">筆電分類</td>' + catHtml + '</tr>';
+            modalHtml += '<tr><td class="p-3 font-semibold text-slate-500 bg-slate-50">經營策略類別</td>' + strategyHtml + '</tr>';
+            modalHtml += '<tr><td class="p-3 font-semibold text-slate-500 bg-slate-50">處理器 (CPU)</td>' + cpuHtml + '</tr>';
+            modalHtml += '<tr><td class="p-3 font-semibold text-slate-500 bg-slate-50">顯卡 / NPU 算力</td>' + gpuHtml + '</tr>';
+            modalHtml += '<tr><td class="p-3 font-semibold text-slate-500 bg-slate-50">記憶體 (RAM)</td>' + ramHtml + '</tr>';
+            modalHtml += '<tr><td class="p-3 font-semibold text-slate-500 bg-slate-50">儲存空間</td>' + storageHtml + '</tr>';
+            modalHtml += '<tr><td class="p-3 font-semibold text-slate-500 bg-slate-50">機身重量</td>' + weightHtml + '</tr>';
+            modalHtml += '<tr><td class="p-3 font-semibold text-slate-500 bg-slate-50">動作處理</td>' + actionHtml + '</tr>';
+            modalHtml += '</tbody></table></div></div>';
+            
+            modal.innerHTML = modalHtml;
+        }
+
+        // Toast Helper
+        function showToast(title, msg, type="success") {
+            const toast = document.getElementById('toast');
+            const tTitle = document.getElementById('toast-title');
+            const tMsg = document.getElementById('toast-msg');
+            const tIcon = document.getElementById('toast-icon');
+            if (!toast || !tTitle || !tMsg) return;
+            
+            tTitle.textContent = title;
+            tMsg.textContent = msg;
+            if (type === "warning") {
+                tIcon.className = "fa-solid fa-triangle-exclamation text-amber-400 text-xl";
+            } else {
+                tIcon.className = "fa-solid fa-circle-check text-emerald-400 text-xl";
+            }
+            toast.classList.remove('translate-x-full');
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+            }, 3000);
+        }
+
+        // Admin Access Logic
+        function requestAdminAccess() {
+            if (isAdminAuthenticated) {
+                switchView('admin');
+            } else {
+                openAdminLoginModal();
+            }
+        }
+
+        function openAdminLoginModal() {
+            const modal = document.getElementById('admin-login-modal');
+            if (modal) {
+                document.getElementById('admin-username-input').value = '';
+                document.getElementById('admin-password-input').value = '';
+                document.getElementById('admin-login-error').classList.add('hidden');
+                modal.classList.remove('hidden');
+            }
+        }
+
+        function closeAdminLoginModal() {
+            const modal = document.getElementById('admin-login-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function togglePasswordVisibility() {
+            const input = document.getElementById('admin-password-input');
+            const icon = document.getElementById('password-eye-icon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fa-solid fa-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'fa-solid fa-eye';
+            }
+        }
+
+        function handleAdminLogin(e) {
+            e.preventDefault();
+            const usernameInput = document.getElementById('admin-username-input');
+            const passwordInput = document.getElementById('admin-password-input');
+            const errorMsg = document.getElementById('admin-login-error');
+            
+            if (usernameInput.value.trim() === 'admin' && passwordInput.value === '1234') {
+                isAdminAuthenticated = true;
+                closeAdminLoginModal();
+                
+                const lockIcon = document.getElementById('nav-admin-lock-icon');
+                if (lockIcon) lockIcon.className = "fa-solid fa-circle-check text-emerald-500";
+                
+                showToast("登入成功", "歡迎進入經營策略、庫存監控與效益分析儀表板");
+                switchView('admin');
+            } else {
+                errorMsg.classList.remove('hidden');
+            }
+        }
+
+        function adminLogout() {
+            isAdminAuthenticated = false;
+            const lockIcon = document.getElementById('nav-admin-lock-icon');
+            if (lockIcon) lockIcon.className = "fa-solid fa-lock text-amber-500";
+            
+            switchView('store');
+            showToast("已登出", "已成功退出後台管理權限");
+        }
+
+        // Charts & Detailed Reports
+        let revChartInstance = null;
+        let brandChartInstance = null;
+
+        function initCharts() {
+            const revenueEl = document.getElementById('revenueChart');
+            const brandEl = document.getElementById('brandChart');
+            if (!revenueEl || !brandEl) return;
+            
+            const tf = document.getElementById('analytics-timeframe') ? document.getElementById('analytics-timeframe').value : 'month';
+            const dataSet = analyticsDataSets[tf] || analyticsDataSets.month;
+            
+            if (revChartInstance) revChartInstance.destroy();
+            if (brandChartInstance) brandChartInstance.destroy();
+            
+            const ctxRev = revenueEl.getContext('2d');
+            revChartInstance = new Chart(ctxRev, {
+                type: 'line',
+                data: {
+                    labels: dataSet.labels,
+                    datasets: [{
+                        label: '營業額 (NT$)',
+                        data: dataSet.monthlyRev,
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.35
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            const ctxBrand = brandEl.getContext('2d');
+            brandChartInstance = new Chart(ctxBrand, {
+                type: 'doughnut',
+                data: {
+                    labels: ['ASUS', 'Lenovo', 'Dell', 'HP', 'Apple'],
+                    datasets: [{
+                        data: dataSet.brands,
+                        backgroundColor: ['#4f46e5', '#38bdf8', '#818cf8', '#c7d2fe', '#a5b4fc']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+            });
+        }
+
+        function updateAnalyticsData() {
+            const tf = document.getElementById('analytics-timeframe').value;
+            const data = analyticsDataSets[tf];
+            if (!data) return;
+            
+            document.getElementById('kpi-revenue').textContent = data.revenue;
+            document.getElementById('kpi-profit').textContent = data.netProfit;
+            document.getElementById('kpi-profit-margin').textContent = data.profitMargin;
+            document.getElementById('kpi-orders').innerHTML = data.orders + ' <span class="text-xs font-normal text-slate-400">/ NT$ <span id="kpi-aov">' + data.aov + '</span></span>';
+            document.getElementById('kpi-bestseller').textContent = data.bestseller;
+            document.getElementById('kpi-bestseller-sales').textContent = '已售出 ' + data.bestsellerSales;
+            
+            document.getElementById('chart-period-tag').textContent = tf === 'month' ? '本月數據分析' : tf === 'quarter' ? '上一季數據分析' : '今年累計數據分析';
+            initCharts();
+            showToast("數據已更新", '已載入 ' + (tf === 'month' ? '本月' : tf === 'quarter' ? '上一季' : '今年累計') + ' 的經營策略報表');
+        }
+
+        function renderDetailedSalesReport() {
+            const tbody = document.getElementById('detailed-sales-report-body');
+            if (!tbody) return;
+            
+            let html = '';
+            products.forEach(p => {
+                const totalCost = p.cost * p.sales;
+                const netProfit = p.revenue - totalCost;
+                
+                let tierBadge = '';
+                let strategyBadge = '';
+
+                if (p.strategyTier === 'A') {
+                    tierBadge = '<span class="px-2.5 py-1 rounded-lg text-[11px] font-extrabold border bg-amber-100 text-amber-800 border-amber-300">A 類 (衝刺規模)</span>';
+                    strategyBadge = p.stock >= 10 ? '<span class="text-amber-700 font-bold">🔥 現貨速出・營收衝刺</span>' : '<span class="text-rose-600 font-bold">⚡ 庫存緊張 (缺貨警示)</span>';
+                } else if (p.strategyTier === 'B') {
+                    tierBadge = '<span class="px-2.5 py-1 rounded-lg text-[11px] font-extrabold border bg-indigo-100 text-indigo-800 border-indigo-300">B 類 (極大化毛利)</span>';
+                    strategyBadge = '<span class="text-indigo-600 font-bold">🏷️ 升級高毛利配件享 95 折</span>';
+                } else {
+                    tierBadge = '<span class="px-2.5 py-1 rounded-lg text-[11px] font-extrabold border bg-emerald-100 text-emerald-800 border-emerald-300">C 類 (加速變現)</span>';
+                    strategyBadge = '<span class="text-emerald-600 font-bold">🎁 贈鍵鼠組・加速庫存去化</span>';
+                }
+                
+                html += '<tr class="hover:bg-slate-50 transition-colors">';
+                html += '<td class="p-3 font-bold text-slate-900">' + p.name + '</td>';
+                html += '<td class="p-3 text-slate-500 uppercase font-semibold text-[11px]">' + p.category + '</td>';
+                html += '<td class="p-3 text-center">' + tierBadge + '</td>';
+                html += '<td class="p-3 text-center font-extrabold ' + (p.stock<10?"text-rose-600":"text-slate-800") + '">' + p.stock + ' 台</td>';
+                html += '<td class="p-3 text-right font-bold text-slate-800">' + p.sales + '</td>';
+                html += '<td class="p-3 text-right font-bold text-slate-900">NT$ ' + p.revenue.toLocaleString() + '</td>';
+                html += '<td class="p-3 text-right font-extrabold text-emerald-600">NT$ ' + netProfit.toLocaleString() + '</td>';
+                html += '<td class="p-3 text-center">' + strategyBadge + '</td>';
+                html += '<td class="p-3 text-center"><button onclick="restockItem10(' + p.id + ')" class="bg-brand-600 hover:bg-brand-500 text-white font-bold px-3 py-1.5 rounded-lg text-[11px] shadow-sm transition-all inline-flex items-center gap-1"><i class="fa-solid fa-plus"></i> 補貨 (+10台)</button></td></tr>';
+            });
+            tbody.innerHTML = html;
+        }
+
+        function updateSalesComparisonOptions() {
+            const s1 = document.getElementById('compare-select-1');
+            const s2 = document.getElementById('compare-select-2');
+            if (!s1 || !s2) return;
+            
+            let s1Html = '', s2Html = '';
+            products.forEach((p, idx) => {
+                s1Html += '<option value="' + p.id + '" ' + (idx===0?'selected':'') + '>' + p.name + '</option>';
+                s2Html += '<option value="' + p.id + '" ' + (idx===1?'selected':'') + '>' + p.name + '</option>';
+            });
+            s1.innerHTML = s1Html;
+            s2.innerHTML = s2Html;
+        }
+
+        function updateSalesComparison() {
+            const s1 = document.getElementById('compare-select-1');
+            const s2 = document.getElementById('compare-select-2');
+            if (!s1 || !s2) return;
+            const id1 = parseInt(s1.value);
+            const id2 = parseInt(s2.value);
+            const p1 = products.find(p => p.id === id1);
+            const p2 = products.find(p => p.id === id2);
+            const resDiv = document.getElementById('sales-comparison-result');
+            if (!p1 || !p2 || !resDiv) return;
+            
+            let tableHtml = '<table class="w-full text-left text-xs border-collapse">';
+            tableHtml += '<thead><tr class="bg-slate-50 border-b border-slate-200"><th class="p-3 text-slate-500 font-bold">指標項目</th><th class="p-3 font-bold text-slate-900">' + p1.name + '</th><th class="p-3 font-bold text-slate-900">' + p2.name + '</th></tr></thead>';
+            tableHtml += '<tbody class="divide-y divide-slate-100 font-medium">';
+            tableHtml += '<tr><td class="p-3 font-semibold text-slate-500 bg-slate-50">經營策略類別</td><td class="p-3 font-bold text-indigo-600">' + p1.strategyTier + ' 類</td><td class="p-3 font-bold text-indigo-600">' + p2.strategyTier + ' 類</td></tr>';
+            tableHtml += '<tr><td class="p-3 font-semibold text-slate-500 bg-slate-50">單機原廠售價</td><td class="p-3 font-bold text-brand-600">NT$ ' + p1.price.toLocaleString() + '</td><td class="p-3 font-bold text-brand-600">NT$ ' + p2.price.toLocaleString() + '</td></tr>';
+            tableHtml += '<tr><td class="p-3 font-semibold text-slate-500 bg-slate-50">即時在庫數量</td><td class="p-3 font-bold">' + p1.stock + ' 台</td><td class="p-3 font-bold">' + p2.stock + ' 台</td></tr>';
+            tableHtml += '<tr><td class="p-3 font-semibold text-slate-500 bg-slate-50">累計銷售數量</td><td class="p-3 font-bold">' + p1.sales + ' 台</td><td class="p-3 font-bold">' + p2.sales + ' 台</td></tr>';
+            tableHtml += '<tr><td class="p-3 font-semibold text-slate-500 bg-slate-50">總銷售額 (NT$)</td><td class="p-3 font-bold">NT$ ' + p1.revenue.toLocaleString() + '</td><td class="p-3 font-bold">NT$ ' + p2.revenue.toLocaleString() + '</td></tr>';
+            tableHtml += '<tr><td class="p-3 font-semibold text-slate-500 bg-slate-50">預估毛利率</td><td class="p-3 font-bold text-emerald-600">' + p1.profitMargin + '%</td><td class="p-3 font-bold text-emerald-600">' + p2.profitMargin + '%</td></tr>';
+            tableHtml += '</tbody></table>';
+            
+            resDiv.innerHTML = tableHtml;
+        }
+
+        function exportReportCSV() {
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "筆電型號,分類,經營類別,即時庫存(台),銷量(台),銷售總額(NT$),估算成本(NT$),預估淨利(NT$),毛利率(%)\n";
+            products.forEach(p => {
+                const totalCost = p.cost * p.sales;
+                const netProfit = p.revenue - totalCost;
+                csvContent += '"' + p.name + '","' + p.category + '","' + p.strategyTier + '",' + p.stock + ',' + p.sales + ',' + p.revenue + ',' + totalCost + ',' + netProfit + ',' + p.profitMargin + '\n';
+            });
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", 'Lapzone_Strategy_Report_' + (new Date().toISOString().slice(0,10)) + '.csv');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast("匯出成功", "經營策略銷售明細報表 CSV 已成功下載！");
+        }
+
+        // ABC Inventory Matrix Edit & Save Logic
+        let isAbcEditing = false;
+        function toggleAbcMatrixEdit() {
+            const displayDiv = document.getElementById('abc-matrix-display');
+            const editDiv = document.getElementById('abc-matrix-edit');
+            const btn = document.getElementById('abc-edit-btn');
+            if (!displayDiv || !editDiv || !btn) return;
+
+            if (!isAbcEditing) {
+                // Populate inputs with current values
+                document.getElementById('input-abc-a-item').value = document.getElementById('abc-a-item-ratio').textContent.replace('品項數比例：', '');
+                document.getElementById('input-abc-a-sales').value = document.getElementById('abc-a-sales-ratio').textContent.replace('總產值／銷售額比例：', '');
+                document.getElementById('input-abc-a-desc').value = document.getElementById('abc-a-desc').textContent;
+
+                document.getElementById('input-abc-b-item').value = document.getElementById('abc-b-item-ratio').textContent.replace('品項數比例：', '');
+                document.getElementById('input-abc-b-sales').value = document.getElementById('abc-b-sales-ratio').textContent.replace('總產值／銷售額比例：', '');
+                document.getElementById('input-abc-b-desc').value = document.getElementById('abc-b-desc').textContent;
+
+                document.getElementById('input-abc-c-item').value = document.getElementById('abc-c-item-ratio').textContent.replace('品項數比例：', '');
+                document.getElementById('input-abc-c-sales').value = document.getElementById('abc-c-sales-ratio').textContent.replace('總產值／銷售額比例：', '');
+                document.getElementById('input-abc-c-desc').value = document.getElementById('abc-c-desc').textContent;
+
+                displayDiv.classList.add('hidden');
+                editDiv.classList.remove('hidden');
+                btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> 儲存數據';
+                btn.className = "bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-md transition-all flex items-center gap-1.5";
+                isAbcEditing = true;
+            } else {
+                // Save values back to display
+                document.getElementById('abc-a-item-ratio').textContent = '品項數比例：' + document.getElementById('input-abc-a-item').value.trim();
+                document.getElementById('abc-a-sales-ratio').textContent = '總產值／銷售額比例：' + document.getElementById('input-abc-a-sales').value.trim();
+                document.getElementById('abc-a-desc').textContent = document.getElementById('input-abc-a-desc').value.trim();
+
+                document.getElementById('abc-b-item-ratio').textContent = '品項數比例：' + document.getElementById('input-abc-b-item').value.trim();
+                document.getElementById('abc-b-sales-ratio').textContent = '總產值／銷售額比例：' + document.getElementById('input-abc-b-sales').value.trim();
+                document.getElementById('abc-b-desc').textContent = document.getElementById('input-abc-b-desc').value.trim();
+
+                document.getElementById('abc-c-item-ratio').textContent = '品項數比例：' + document.getElementById('input-abc-c-item').value.trim();
+                document.getElementById('abc-c-sales-ratio').textContent = '總產值／銷售額比例：' + document.getElementById('input-abc-c-sales').value.trim();
+                document.getElementById('abc-c-desc').textContent = document.getElementById('input-abc-c-desc').value.trim();
+
+                editDiv.classList.add('hidden');
+                displayDiv.classList.remove('hidden');
+                btn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> 編輯數據';
+                btn.className = "bg-slate-100 hover:bg-brand-50 hover:text-brand-600 text-slate-700 text-xs font-bold px-4 py-2.5 rounded-xl border border-slate-200 transition-all flex items-center gap-1.5";
+                isAbcEditing = false;
+                showToast("儲存成功", "ABC 庫存分析矩陣數據已更新！");
+            }
+        }
+    </script>
+</body>
+</html>
